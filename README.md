@@ -79,20 +79,6 @@ $ npm run build
 $ npm test
 ```
 
-### Platform-specific tests
-
-By default, the tests are run for both Node.js and the browser. You can also run only the tests for a particular target platform:
-
-```bash
-$ npm run test:node
-```
-
-or:
-
-```bash
-$ npm run test:browser
-```
-
 ## Support NoFlo
 
 We have had both corporate support and EU R&D funding over the years. Currently NoFlo UI is being developed as a passion project. To support development, here are some methods:
