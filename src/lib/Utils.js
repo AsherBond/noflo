@@ -13,9 +13,13 @@
  * @returns {string}
  */
 export function guessLanguageFromFilename(filename) {
-  if (/.*\.coffee$/.test(filename)) { return 'coffeescript'; }
-  if (/.*\.ts$/.test(filename)) { return 'typescript'; }
-  return 'javascript';
+  if (/.*\.coffee$/.test(filename)) {
+    return "coffeescript";
+  }
+  if (/.*\.ts$/.test(filename)) {
+    return "typescript";
+  }
+  return "javascript";
 }
 
 /**
@@ -23,8 +27,10 @@ export function guessLanguageFromFilename(filename) {
  * @returns {boolean}
  */
 export function isArray(obj) {
-  if (Array.isArray) { return Array.isArray(obj); }
-  return Object.prototype.toString.call(obj) === '[object Array]';
+  if (Array.isArray) {
+    return Array.isArray(obj);
+  }
+  return Object.prototype.toString.call(obj) === "[object Array]";
 }
 
 // the following functions are from http://underscorejs.org/docs/underscore.html
@@ -57,7 +63,7 @@ export function debounce(func, wait, immediate) {
 
   function later() {
     const last = Date.now() - timestamp;
-    if ((last < wait) && (last >= 0)) {
+    if (last < wait && last >= 0) {
       timeout = setTimeout(later, wait - last);
     } else {
       timeout = null;

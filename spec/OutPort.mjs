@@ -1,63 +1,62 @@
-import assert from 'node:assert/strict';
-import { describe, it, beforeEach } from 'node:test';
-import * as noflo from '../src/lib/NoFlo.js';
+import assert from "node:assert/strict";
+import { beforeEach, describe, it } from "node:test";
+import * as noflo from "../src/lib/NoFlo.js";
 
-describe('Outport Port', () => {
-  describe('with addressable ports', () => {
-    let s1 = null; let s2 = null; let s3 = null;
+describe("Outport Port", () => {
+  describe("with addressable ports", () => {
+    let s1 = null;
+    let s2 = null;
+    let s3 = null;
     beforeEach(() => {
       s1 = new noflo.internalSocket.InternalSocket();
       s2 = new noflo.internalSocket.InternalSocket();
       s3 = new noflo.internalSocket.InternalSocket();
     });
-    it('should be able to send to a specific port', () => {
+    it("should be able to send to a specific port", () => {
       const p = new noflo.OutPort({ addressable: true });
       p.attach(s1);
       p.attach(s2);
       p.attach(s3);
       assert.deepEqual(p.listAttached(), [0, 1, 2]);
-      s1.on('data', () => {
+      s1.on("data", () => {
         assert.strictEqual(true, false);
       });
-      s2.on('data', (data) => {
-        assert.strictEqual(data, 'some-data');
+      s2.on("data", (data) => {
+        assert.strictEqual(data, "some-data");
       });
-      s3.on('data', () => {
+      s3.on("data", () => {
         assert.strictEqual(true, false);
       });
-      p.send('some-data', 1);
+      p.send("some-data", 1);
     });
-    it('should be able to send to index 0', (_t, done) => {
+    it("should be able to send to index 0", (_t, done) => {
       const p = new noflo.OutPort({ addressable: true });
       p.attach(s1);
-      s1.on('data', (data) => {
-        assert.strictEqual(data, 'my-data');
+      s1.on("data", (data) => {
+        assert.strictEqual(data, "my-data");
         done();
       });
-      p.send('my-data', 0);
+      p.send("my-data", 0);
     });
-    it('should throw an error when sent data without address', () => {
-      assert.throws(() => p.send('some-data'));
+    it("should throw an error when sent data without address", () => {
+      assert.throws(() => p.send("some-data"));
     });
-    it('should throw an error when a specific port is requested with non-addressable port', () => {
+    it("should throw an error when a specific port is requested with non-addressable port", () => {
       const p = new noflo.OutPort();
       p.attach(s1);
       p.attach(s2);
       p.attach(s3);
-      assert.throws(() => p.send('some-data', 1));
+      assert.throws(() => p.send("some-data", 1));
     });
-    it('should give correct port index when detaching a connection', (_t, done) => {
+    it("should give correct port index when detaching a connection", (_t, done) => {
       const p = new noflo.OutPort({ addressable: true });
       p.attach(s1, 3);
       p.attach(s2, 1);
       p.attach(s3, 5);
       const expectedSockets = [s2, s3];
       const expected = [1, 5];
-      const expectedAttached = [
-        [3, 5],
-        [3],
-      ];
-      p.on('detach', (socket, index) => {
+      const expectedAttached = [[3, 5], [3]];
+      p.on("detach", (socket, index) => {
         assert.strictEqual(socket, expectedSockets.shift());
         assert.strictEqual(index, expected.shift());
         assert.equal(p.isAttached(index), false);
@@ -66,43 +65,47 @@ describe('Outport Port', () => {
         for (const att of atts) {
           assert.equal(p.isAttached(att), true);
         }
-        if (!expected.length) { done(); }
+        if (!expected.length) {
+          done();
+        }
       });
       p.detach(s2);
       p.detach(s3);
     });
   });
-  describe('with caching ports', () => {
-    let s1 = null; let s2 = null; let s3 = null;
+  describe("with caching ports", () => {
+    let s1 = null;
+    let s2 = null;
+    let s3 = null;
     beforeEach(() => {
       s1 = new noflo.internalSocket.InternalSocket();
       s2 = new noflo.internalSocket.InternalSocket();
       s3 = new noflo.internalSocket.InternalSocket();
     });
-    it('should repeat the previously sent value on attach event', (_t, done) => {
+    it("should repeat the previously sent value on attach event", (_t, done) => {
       const p = new noflo.OutPort({ caching: true });
 
-      s1.once('data', (data) => {
-        assert.strictEqual(data, 'foo');
+      s1.once("data", (data) => {
+        assert.strictEqual(data, "foo");
       });
-      s2.once('data', (data) => {
-        assert.strictEqual(data, 'foo');
+      s2.once("data", (data) => {
+        assert.strictEqual(data, "foo");
         // Next value should be different
-        s2.once('data', (data) => {
-          assert.strictEqual(data, 'bar');
+        s2.once("data", (data) => {
+          assert.strictEqual(data, "bar");
           done();
         });
       });
       p.attach(s1);
-      p.send('foo');
+      p.send("foo");
       p.disconnect();
 
       p.attach(s2);
 
-      p.send('bar');
+      p.send("bar");
       p.disconnect();
     });
-    it('should support addressable ports', (_t, done) => {
+    it("should support addressable ports", (_t, done) => {
       const p = new noflo.OutPort({
         addressable: true,
         caching: true,
@@ -111,53 +114,52 @@ describe('Outport Port', () => {
       p.attach(s1);
       p.attach(s2);
 
-      s1.on('data', () => {
+      s1.on("data", () => {
         assert.strictEqual(true, false);
       });
-      s2.on('data', (data) => {
-        assert.strictEqual(data, 'some-data');
+      s2.on("data", (data) => {
+        assert.strictEqual(data, "some-data");
       });
-      s3.on('data', (data) => {
-        assert.strictEqual(data, 'some-data');
+      s3.on("data", (data) => {
+        assert.strictEqual(data, "some-data");
         done();
       });
 
-      p.send('some-data', 1);
+      p.send("some-data", 1);
       p.disconnect(1);
       p.detach(s2);
       p.attach(s3, 1);
     });
   });
-  describe('with IP objects', () => {
-    let s1 = null; let s2 = null; let s3 = null;
+  describe("with IP objects", () => {
+    let s1 = null;
+    let s2 = null;
+    let s3 = null;
     beforeEach(() => {
       s1 = new noflo.internalSocket.InternalSocket();
       s2 = new noflo.internalSocket.InternalSocket();
       s3 = new noflo.internalSocket.InternalSocket();
     });
-    it('should send data IPs and substreams', (_t, done) => {
+    it("should send data IPs and substreams", (_t, done) => {
       const p = new noflo.OutPort();
       p.attach(s1);
-      const expectedEvents = [
-        'data',
-        'openBracket',
-        'data',
-        'closeBracket',
-      ];
+      const expectedEvents = ["data", "openBracket", "data", "closeBracket"];
       let count = 0;
-      s1.on('ip', (data) => {
+      s1.on("ip", (data) => {
         count++;
         assert.strictEqual(typeof data, "object");
         assert.strictEqual(data.type, expectedEvents.shift());
-        if (data.type === 'data') { assert.strictEqual(data.data, 'my-data'); }
-        if (count === 4) { done(); }
+        if (data.type === "data") {
+          assert.strictEqual(data.data, "my-data");
+        }
+        if (count === 4) {
+          done();
+        }
       });
-      p.data('my-data');
-      p.openBracket()
-        .data('my-data')
-        .closeBracket();
+      p.data("my-data");
+      p.openBracket().data("my-data").closeBracket();
     });
-    it('should send non-clonable objects by reference', (_t, done) => {
+    it("should send non-clonable objects by reference", (_t, done) => {
       const p = new noflo.OutPort();
       p.attach(s1);
       p.attach(s2);
@@ -166,7 +168,7 @@ describe('Outport Port', () => {
       const obj = {
         foo: 123,
         bar: {
-          boo: 'baz',
+          boo: "baz",
         },
         func() {
           this.foo = 456;
@@ -174,15 +176,15 @@ describe('Outport Port', () => {
         },
       };
 
-      s1.on('ip', (data) => {
+      s1.on("ip", (data) => {
         assert.strictEqual(typeof data, "object");
         assert.strictEqual(data.data, obj);
         assert.strictEqual(typeof data.data.func, "function");
-        s2.on('ip', (data) => {
+        s2.on("ip", (data) => {
           assert.strictEqual(typeof data, "object");
           assert.strictEqual(data.data, obj);
           assert.strictEqual(typeof data.data.func, "function");
-          s3.on('ip', (data) => {
+          s3.on("ip", (data) => {
             assert.strictEqual(typeof data, "object");
             assert.strictEqual(data.data, obj);
             assert.strictEqual(typeof data.data.func, "function");
@@ -191,10 +193,9 @@ describe('Outport Port', () => {
         });
       });
 
-      p.data(obj,
-        { clonable: false }); // default
+      p.data(obj, { clonable: false }); // default
     });
-    it('should clone clonable objects on fan-out', (_t, done) => {
+    it("should clone clonable objects on fan-out", (_t, done) => {
       const p = new noflo.OutPort();
       p.attach(s1);
       p.attach(s2);
@@ -203,25 +204,25 @@ describe('Outport Port', () => {
       const obj = {
         foo: 123,
         bar: {
-          boo: 'baz',
+          boo: "baz",
         },
         func() {
           this.foo = 456;
         },
       };
 
-      s1.on('ip', (data) => {
+      s1.on("ip", (data) => {
         assert.strictEqual(typeof data, "object");
         // First send is non-cloning
         assert.strictEqual(data.data, obj);
         assert.strictEqual(typeof data.data.func, "function");
-        s2.on('ip', (data) => {
+        s2.on("ip", (data) => {
           assert.strictEqual(typeof data, "object");
           assert.notEqual(data.data, obj);
           assert.strictEqual(data.data.foo, obj.foo);
           assert.deepStrictEqual(data.data.bar, obj.bar);
           assert.strictEqual(data.data.func, undefined);
-          s3.on('ip', (data) => {
+          s3.on("ip", (data) => {
             assert.strictEqual(typeof data, "object");
             assert.notEqual(data.data, obj);
             assert.strictEqual(data.data.foo, obj.foo);
@@ -232,68 +233,68 @@ describe('Outport Port', () => {
         });
       });
 
-      p.data(obj,
-        { clonable: true });
+      p.data(obj, { clonable: true });
     });
-    it('should stamp an IP object with the port\'s datatype', (_t, done) => {
-      const p = new noflo.OutPort({ datatype: 'string' });
+    it("should stamp an IP object with the port's datatype", (_t, done) => {
+      const p = new noflo.OutPort({ datatype: "string" });
       p.attach(s1);
-      s1.on('ip', (data) => {
+      s1.on("ip", (data) => {
         assert.strictEqual(typeof data, "object");
-        assert.strictEqual(data.type, 'data');
-        assert.strictEqual(data.data, 'Hello');
-        assert.strictEqual(data.datatype, 'string');
+        assert.strictEqual(data.type, "data");
+        assert.strictEqual(data.data, "Hello");
+        assert.strictEqual(data.datatype, "string");
         done();
       });
-      p.data('Hello');
+      p.data("Hello");
     });
-    it('should keep an IP object\'s datatype as-is if already set', (_t, done) => {
-      const p = new noflo.OutPort({ datatype: 'string' });
+    it("should keep an IP object's datatype as-is if already set", (_t, done) => {
+      const p = new noflo.OutPort({ datatype: "string" });
       p.attach(s1);
-      s1.on('ip', (data) => {
+      s1.on("ip", (data) => {
         assert.strictEqual(typeof data, "object");
-        assert.strictEqual(data.type, 'data');
+        assert.strictEqual(data.type, "data");
         assert.strictEqual(data.data, 123);
-        assert.strictEqual(data.datatype, 'integer');
+        assert.strictEqual(data.datatype, "integer");
         done();
       });
-      p.sendIP(new noflo.IP('data', 123,
-        { datatype: 'integer' }));
+      p.sendIP(new noflo.IP("data", 123, { datatype: "integer" }));
     });
-    it('should stamp an IP object with the port\'s schema', (_t, done) => {
+    it("should stamp an IP object with the port's schema", (_t, done) => {
       const p = new noflo.OutPort({
-        datatype: 'string',
-        schema: 'text/markdown',
+        datatype: "string",
+        schema: "text/markdown",
       });
       p.attach(s1);
-      s1.on('ip', (data) => {
+      s1.on("ip", (data) => {
         assert.strictEqual(typeof data, "object");
-        assert.strictEqual(data.type, 'data');
-        assert.strictEqual(data.data, 'Hello');
-        assert.strictEqual(data.datatype, 'string');
-        assert.strictEqual(data.schema, 'text/markdown');
+        assert.strictEqual(data.type, "data");
+        assert.strictEqual(data.data, "Hello");
+        assert.strictEqual(data.datatype, "string");
+        assert.strictEqual(data.schema, "text/markdown");
         done();
       });
-      p.data('Hello');
+      p.data("Hello");
     });
-    it('should keep an IP object\'s schema as-is if already set', (_t, done) => {
+    it("should keep an IP object's schema as-is if already set", (_t, done) => {
       const p = new noflo.OutPort({
-        datatype: 'string',
-        schema: 'text/markdown',
+        datatype: "string",
+        schema: "text/markdown",
       });
       p.attach(s1);
-      s1.on('ip', (data) => {
+      s1.on("ip", (data) => {
         assert.strictEqual(typeof data, "object");
-        assert.strictEqual(data.type, 'data');
-        assert.strictEqual(data.data, 'Hello');
-        assert.strictEqual(data.datatype, 'string');
-        assert.strictEqual(data.schema, 'text/plain');
+        assert.strictEqual(data.type, "data");
+        assert.strictEqual(data.data, "Hello");
+        assert.strictEqual(data.datatype, "string");
+        assert.strictEqual(data.schema, "text/plain");
         done();
       });
-      p.sendIP(new noflo.IP('data', 'Hello', {
-        datatype: 'string',
-        schema: 'text/plain',
-      }));
+      p.sendIP(
+        new noflo.IP("data", "Hello", {
+          datatype: "string",
+          schema: "text/plain",
+        }),
+      );
     });
   });
 });

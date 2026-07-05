@@ -26,7 +26,7 @@ The library is meant to be a durable piece of software that can be run and maint
 
 ## Tech stack
 
-- Standard JavaScript following the EcmaScript specification as supported in evergreen browsers and Node.js. Limiting dependencies to WinterTC specification is preferred
+- Standard JavaScript following the EcmaScript specification as supported in evergreen browsers and Node.js. Limiting dependencies to WinterTC _Minimum common web API_ is preferred
 - JsDoc annotations are used to document all library functions and to define TypeScript type safety
 - TypeScript compiler is used to verify type safety and to extract type definitions to their own files
 - Testing is done using Node.js native test runner and assertion functionality

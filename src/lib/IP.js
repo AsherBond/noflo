@@ -38,7 +38,7 @@ export default class IP {
    * @returns {boolean}
    */
   static isIP(obj) {
-    return obj && (typeof obj === 'object') && (obj.isIP === true);
+    return obj && typeof obj === "object" && obj.isIP === true;
   }
 
   // Creates as new IP object
@@ -49,7 +49,7 @@ export default class IP {
    * @param {IPOptions} [options]
    */
   constructor(type, data = null, options = {}) {
-    this.type = type || 'data';
+    this.type = type || "data";
     this.data = data;
     this.isIP = true;
     /** @type {string|null} */
@@ -60,10 +60,12 @@ export default class IP {
     /** @type {number|null} */
     this.index = null; // addressable port index
     this.schema = null;
-    this.datatype = 'all';
+    this.datatype = "all";
     this.initial = false;
-    if (typeof options === 'object') {
-      Object.keys(options).forEach((key) => { this[key] = options[key]; });
+    if (typeof options === "object") {
+      Object.keys(options).forEach((key) => {
+        this[key] = options[key];
+      });
     }
   }
 
@@ -75,9 +77,13 @@ export default class IP {
     const ip = new IP(this.type);
     Object.keys(this).forEach((key) => {
       const val = this[key];
-      if (key === 'owner') { return; }
-      if (val === null) { return; }
-      if (typeof (val) === 'object') {
+      if (key === "owner") {
+        return;
+      }
+      if (val === null) {
+        return;
+      }
+      if (typeof val === "object") {
         ip[key] = JSON.parse(JSON.stringify(val));
       } else {
         ip[key] = val;

@@ -23,14 +23,19 @@ export default class ProcessContext {
   activate() {
     // Push a new result value if previous has been sent already
     /* eslint-disable no-underscore-dangle */
-    if (this.result.__resolved || (this.nodeInstance.outputQ.indexOf(this.result) === -1)) {
+    if (
+      this.result.__resolved ||
+      this.nodeInstance.outputQ.indexOf(this.result) === -1
+    ) {
       this.result = {};
     }
     this.nodeInstance.activate(this);
   }
 
   deactivate() {
-    if (!this.result.__resolved) { this.result.__resolved = true; }
+    if (!this.result.__resolved) {
+      this.result.__resolved = true;
+    }
     this.nodeInstance.deactivate(this);
   }
 }

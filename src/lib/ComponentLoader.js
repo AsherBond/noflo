@@ -9,9 +9,9 @@
     import/prefer-default-export,
 */
 
-import { Graph } from 'fbp-graph';
-import * as registerLoader from './loader/register.js';
-import { deprecated, makeAsync } from './Platform.js';
+import { Graph } from "fbp-graph";
+import * as registerLoader from "./loader/register.js";
+import { deprecated, makeAsync } from "./Platform.js";
 
 /**
  * @callback ComponentFactory
@@ -99,11 +99,17 @@ export class ComponentLoader {
    * @returns {string}
    */
   getModulePrefix(name) {
-    if (!name) { return ''; }
+    if (!name) {
+      return "";
+    }
     let res = name;
-    if (res === 'noflo') { return ''; }
-    if (res[0] === '@') { res = res.replace(/@[a-z-]+\//, ''); }
-    return res.replace(/^noflo-/, '');
+    if (res === "noflo") {
+      return "";
+    }
+    if (res[0] === "@") {
+      res = res.replace(/@[a-z-]+\//, "");
+    }
+    return res.replace(/^noflo-/, "");
   }
 
   // Get the list of all available components
@@ -137,7 +143,9 @@ export class ComponentLoader {
       promise = this.processing;
     }
     if (callback) {
-      deprecated('Providing a callback to ComponentLoader.listComponents is deprecated, use Promises');
+      deprecated(
+        "Providing a callback to ComponentLoader.listComponents is deprecated, use Promises",
+      );
       promise.then((components) => {
         callback(null, components);
       }, callback);
@@ -158,18 +166,21 @@ export class ComponentLoader {
   load(name, meta, cb) {
     let metadata = meta;
     let callback = cb;
-    if (typeof meta === 'function') {
+    if (typeof meta === "function") {
       callback = meta;
       metadata = cb;
     }
     if (!this.ready) {
-      return this.listComponents()
-        .then(() => this.load(name, meta, cb));
+      return this.listComponents().then(() => this.load(name, meta, cb));
     }
 
     const promise = new Promise((resolve, reject) => {
       if (!this.components) {
-        reject(new Error(`Component ${name} not available with base ${this.baseDir}`));
+        reject(
+          new Error(
+            `Component ${name} not available with base ${this.baseDir}`,
+          ),
+        );
         return;
       }
       let component = this.components[name];
@@ -178,47 +189,57 @@ export class ComponentLoader {
         const keys = Object.keys(this.components);
         for (let i = 0; i < keys.length; i += 1) {
           const componentName = keys[i];
-          if (componentName.split('/')[1] === name) {
+          if (componentName.split("/")[1] === name) {
             component = this.components[componentName];
             break;
           }
         }
         if (!component) {
           // Failure to load
-          reject(new Error(`Component ${name} not available with base ${this.baseDir}`));
+          reject(
+            new Error(
+              `Component ${name} not available with base ${this.baseDir}`,
+            ),
+          );
           return;
         }
       }
       resolve(component);
-    })
-      .then((component) => {
-        if (this.isGraph(component)) {
-          return this.loadGraph(name, component, metadata);
-        }
+    }).then((component) => {
+      if (this.isGraph(component)) {
+        return this.loadGraph(name, component, metadata);
+      }
 
-        return this.createComponent(name, component, metadata)
-          .then((instance) => {
-            if (!instance) {
-              return Promise.reject(new Error(`Component ${name} could not be loaded.`));
-            }
-            const inst = instance;
-            if (name === 'Graph') {
-              inst.baseDir = this.baseDir;
-            }
-            if (typeof name === 'string') {
-              inst.componentName = name;
-            }
+      return this.createComponent(name, component, metadata).then(
+        (instance) => {
+          if (!instance) {
+            return Promise.reject(
+              new Error(`Component ${name} could not be loaded.`),
+            );
+          }
+          const inst = instance;
+          if (name === "Graph") {
+            inst.baseDir = this.baseDir;
+          }
+          if (typeof name === "string") {
+            inst.componentName = name;
+          }
 
-            if (inst.isLegacy()) {
-              deprecated(`Component ${name} uses legacy NoFlo APIs. Please port to Process API`);
-            }
+          if (inst.isLegacy()) {
+            deprecated(
+              `Component ${name} uses legacy NoFlo APIs. Please port to Process API`,
+            );
+          }
 
-            this.setIcon(name, inst);
-            return inst;
-          });
-      });
+          this.setIcon(name, inst);
+          return inst;
+        },
+      );
+    });
     if (callback) {
-      deprecated('Providing a callback to ComponentLoader.load is deprecated, use Promises');
+      deprecated(
+        "Providing a callback to ComponentLoader.load is deprecated, use Promises",
+      );
       promise.then((instance) => {
         callback(null, instance);
       }, callback);
@@ -240,39 +261,52 @@ export class ComponentLoader {
     }
 
     // If a string was specified, attempt to `require` it.
-    if (typeof implementation === 'string') {
-      if (typeof registerLoader.dynamicLoad === 'function') {
+    if (typeof implementation === "string") {
+      if (typeof registerLoader.dynamicLoad === "function") {
         return new Promise((resolve, reject) => {
-          registerLoader.dynamicLoad(name, implementation, metadata, (err, instance) => {
-            if (err) {
-              reject(err);
-              return;
-            }
-            resolve(instance);
-          });
+          registerLoader.dynamicLoad(
+            name,
+            implementation,
+            metadata,
+            (err, instance) => {
+              if (err) {
+                reject(err);
+                return;
+              }
+              resolve(instance);
+            },
+          );
         });
       }
-      return Promise.reject(Error(`Dynamic loading of ${implementation} for component ${name} not available on this platform.`));
+      return Promise.reject(
+        Error(
+          `Dynamic loading of ${implementation} for component ${name} not available on this platform.`,
+        ),
+      );
     }
 
     // Attempt to create the component instance using the `getComponent` method.
     let instance;
     const impl = /** @type ModuleComponent */ (implementation);
-    if (typeof impl.getComponent === 'function') {
+    if (typeof impl.getComponent === "function") {
       try {
         instance = impl.getComponent(metadata);
       } catch (error) {
         return Promise.reject(error);
       }
       // Attempt to create a component using a factory function.
-    } else if (typeof implementation === 'function') {
+    } else if (typeof implementation === "function") {
       try {
         instance = implementation(metadata);
       } catch (error) {
         return Promise.reject(error);
       }
     } else {
-      return Promise.reject(new Error(`Invalid type ${typeof (implementation)} for component ${name}.`));
+      return Promise.reject(
+        new Error(
+          `Invalid type ${typeof implementation} for component ${name}.`,
+        ),
+      );
     }
     return Promise.resolve(instance);
   }
@@ -284,18 +318,24 @@ export class ComponentLoader {
    */
   isGraph(cPath) {
     // Live graph instance
-    if ((typeof cPath === 'object')
-      && (cPath instanceof Graph
-        || (Array.isArray(cPath.nodes)
-          && Array.isArray(cPath.edges)
-          && Array.isArray(cPath.initializers)))) {
+    if (
+      typeof cPath === "object" &&
+      (cPath instanceof Graph ||
+        (Array.isArray(cPath.nodes) &&
+          Array.isArray(cPath.edges) &&
+          Array.isArray(cPath.initializers)))
+    ) {
       return true;
     }
     // Graph JSON definition
-    if ((typeof cPath === 'object') && cPath.processes && cPath.connections) { return true; }
-    if (typeof cPath !== 'string') { return false; }
+    if (typeof cPath === "object" && cPath.processes && cPath.connections) {
+      return true;
+    }
+    if (typeof cPath !== "string") {
+      return false;
+    }
     // Graph file path
-    return (cPath.indexOf('.fbp') !== -1) || (cPath.indexOf('.json') !== -1);
+    return cPath.indexOf(".fbp") !== -1 || cPath.indexOf(".json") !== -1;
   }
 
   // Load a graph as a NoFlo subgraph component instance
@@ -307,17 +347,19 @@ export class ComponentLoader {
    * @returns {Promise<import("../components/Graph").Graph>}
    */
   loadGraph(name, component, metadata) {
-    const graphComponent = /** @type {ModuleComponent} */ (this.components.Graph);
-    return this.createComponent(name, graphComponent, metadata)
-      .then((graph) => {
+    const graphComponent = /** @type {ModuleComponent} */ (
+      this.components.Graph
+    );
+    return this.createComponent(name, graphComponent, metadata).then(
+      (graph) => {
         const g = /** @type {import("../components/Graph").Graph} */ (graph);
         g.loader = this;
         g.baseDir = this.baseDir;
-        g.inPorts.remove('graph');
+        g.inPorts.remove("graph");
         this.setIcon(name, g);
-        return g.setGraph(component)
-          .then(() => g);
-      });
+        return g.setGraph(component).then(() => g);
+      },
+    );
   }
 
   // Set icon for the component instance. If the instance
@@ -331,10 +373,12 @@ export class ComponentLoader {
    */
   setIcon(name, instance) {
     // See if component has an icon
-    if (!instance.getIcon || instance.getIcon()) { return; }
+    if (!instance.getIcon || instance.getIcon()) {
+      return;
+    }
 
     // See if library has an icon
-    const [library, componentName] = name.split('/');
+    const [library, componentName] = name.split("/");
     if (componentName && this.getLibraryIcon(library)) {
       instance.setIcon(this.getLibraryIcon(library));
       return;
@@ -342,11 +386,11 @@ export class ComponentLoader {
 
     // See if instance is a subgraph
     if (instance.isSubgraph()) {
-      instance.setIcon('sitemap');
+      instance.setIcon("sitemap");
       return;
     }
 
-    instance.setIcon('gear');
+    instance.setIcon("gear");
   }
 
   /**
@@ -376,7 +420,9 @@ export class ComponentLoader {
   normalizeName(packageId, name) {
     const prefix = this.getModulePrefix(packageId);
     let fullName = `${prefix}/${name}`;
-    if (!packageId) { fullName = name; }
+    if (!packageId) {
+      fullName = name;
+    }
     return fullName;
   }
 
@@ -452,25 +498,35 @@ export class ComponentLoader {
    */
   setSource(packageId, name, source, language, callback) {
     if (!this.ready) {
-      return this.listComponents()
-        .then(() => this.setSource(packageId, name, source, language, callback));
+      return this.listComponents().then(() =>
+        this.setSource(packageId, name, source, language, callback),
+      );
     }
     let promise;
     if (!registerLoader.setSource) {
-      promise = Promise.reject(new Error('setSource not allowed'));
+      promise = Promise.reject(new Error("setSource not allowed"));
     } else {
       promise = new Promise((resolve, reject) => {
-        registerLoader.setSource(this, packageId, name, source, language, (err) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve();
-        });
+        registerLoader.setSource(
+          this,
+          packageId,
+          name,
+          source,
+          language,
+          (err) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve();
+          },
+        );
       });
     }
     if (callback) {
-      deprecated('Providing a callback to ComponentLoader.setSource is deprecated, use Promises');
+      deprecated(
+        "Providing a callback to ComponentLoader.setSource is deprecated, use Promises",
+      );
       promise.then(() => {
         callback(null);
       }, callback);
@@ -492,12 +548,11 @@ export class ComponentLoader {
    */
   getSource(name, callback) {
     if (!this.ready) {
-      return this.listComponents()
-        .then(() => this.getSource(name, callback));
+      return this.listComponents().then(() => this.getSource(name, callback));
     }
     let promise;
     if (!registerLoader.getSource) {
-      promise = Promise.reject(new Error('getSource not allowed'));
+      promise = Promise.reject(new Error("getSource not allowed"));
     } else {
       promise = new Promise((resolve, reject) => {
         registerLoader.getSource(this, name, (err, source) => {
@@ -510,7 +565,9 @@ export class ComponentLoader {
       });
     }
     if (callback) {
-      deprecated('Providing a callback to ComponentLoader.getSource is deprecated, use Promises');
+      deprecated(
+        "Providing a callback to ComponentLoader.getSource is deprecated, use Promises",
+      );
       promise.then((source) => {
         callback(null, source);
       }, callback);
@@ -523,7 +580,7 @@ export class ComponentLoader {
   getLanguages() {
     if (!registerLoader.getLanguages) {
       // This component loader doesn't support the method, default to normal JS
-      return ['javascript', 'es2015'];
+      return ["javascript", "es2015"];
     }
     return registerLoader.getLanguages();
   }

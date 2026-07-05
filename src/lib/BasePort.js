@@ -1,7 +1,7 @@
 //     NoFlo - Flow-Based Programming for JavaScript
 //     (c) 2014-2017 Flowhub UG
 //     NoFlo may be freely distributed under the MIT license
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 
 // ## NoFlo Port Base class
 //
@@ -9,19 +9,19 @@ import { EventEmitter } from 'node:events';
 
 // The list of valid datatypes for ports.
 const validTypes = [
-  'all',
-  'string',
-  'number',
-  'int',
-  'object',
-  'array',
-  'boolean',
-  'color',
-  'date',
-  'bang',
-  'function',
-  'buffer',
-  'stream',
+  "all",
+  "string",
+  "number",
+  "int",
+  "object",
+  "array",
+  "boolean",
+  "color",
+  "date",
+  "bang",
+  "function",
+  "buffer",
+  "stream",
 ];
 
 /**
@@ -44,30 +44,36 @@ const validTypes = [
 function handleOptions(options) {
   // We default to the `all` type if no explicit datatype
   // was provided
-  let datatype = options.datatype || 'all';
+  let datatype = options.datatype || "all";
   // Normalize the legacy `integer` type to `int`.
-  if (datatype === 'integer') { datatype = 'int'; }
+  if (datatype === "integer") {
+    datatype = "int";
+  }
 
   // By default ports are not required for graph execution
   const required = options.required || false;
 
   // Ensure datatype defined for the port is valid
   if (validTypes.indexOf(datatype) === -1) {
-    throw new Error(`Invalid port datatype '${datatype}' specified, valid are ${validTypes.join(', ')}`);
+    throw new Error(
+      `Invalid port datatype '${datatype}' specified, valid are ${validTypes.join(", ")}`,
+    );
   }
 
   // Ensure schema defined for the port is valid
   const schema = options.schema || options.type;
 
-  if (schema && (schema.indexOf('/') === -1)) {
-    throw new Error(`Invalid port schema '${schema}' specified. Should be URL or MIME type`);
+  if (schema && schema.indexOf("/") === -1) {
+    throw new Error(
+      `Invalid port schema '${schema}' specified. Should be URL or MIME type`,
+    );
   }
 
   // Scoping
-  const scoped = (typeof options.scoped === 'boolean') ? options.scoped : true;
+  const scoped = typeof options.scoped === "boolean" ? options.scoped : true;
 
   // Description
-  const description = options.description || '';
+  const description = options.description || "";
 
   /* eslint-disable prefer-object-spread */
   return Object.assign({}, options, {
@@ -103,7 +109,7 @@ export default class BasePort extends EventEmitter {
 
   getId() {
     if (!this.node || !this.name) {
-      return 'Port';
+      return "Port";
     }
     return `${this.node} ${this.name.toUpperCase()}`;
   }
@@ -111,11 +117,17 @@ export default class BasePort extends EventEmitter {
   /**
    * @returns {string}
    */
-  getDataType() { return this.options.datatype || 'all'; }
+  getDataType() {
+    return this.options.datatype || "all";
+  }
 
-  getSchema() { return this.options.schema || null; }
+  getSchema() {
+    return this.options.schema || null;
+  }
 
-  getDescription() { return this.options.description; }
+  getDescription() {
+    return this.options.description;
+  }
 
   /**
    * @param {import("./InternalSocket").InternalSocket} socket
@@ -123,16 +135,16 @@ export default class BasePort extends EventEmitter {
    */
   attach(socket, index = null) {
     let idx = /** @type {number} */ (index);
-    if (!this.isAddressable() || (index === null)) {
+    if (!this.isAddressable() || index === null) {
       idx = this.sockets.length;
     }
     this.sockets[idx] = socket;
     this.attachSocket(socket, idx);
     if (this.isAddressable()) {
-      this.emit('attach', socket, idx);
+      this.emit("attach", socket, idx);
       return;
     }
-    this.emit('attach', socket);
+    this.emit("attach", socket);
   }
 
   /**
@@ -140,7 +152,7 @@ export default class BasePort extends EventEmitter {
    * @param {number|null} [index]
    */
   // biome-ignore lint/correctness/noUnusedFunctionParameters: Overridden in implementation class
-  attachSocket(socket, index = null) { }
+  attachSocket(socket, index = null) {}
 
   /**
    * @param {import("./InternalSocket").InternalSocket} socket
@@ -152,24 +164,30 @@ export default class BasePort extends EventEmitter {
     }
     this.sockets[index] = undefined;
     if (this.isAddressable()) {
-      this.emit('detach', socket, index);
+      this.emit("detach", socket, index);
       return;
     }
-    this.emit('detach', socket);
+    this.emit("detach", socket);
   }
 
   isAddressable() {
-    if (this.options.addressable) { return true; }
+    if (this.options.addressable) {
+      return true;
+    }
     return false;
   }
 
   isBuffered() {
-    if (this.options.buffered) { return true; }
+    if (this.options.buffered) {
+      return true;
+    }
     return false;
   }
 
   isRequired() {
-    if (this.options.required) { return true; }
+    if (this.options.required) {
+      return true;
+    }
     return false;
   }
 
@@ -178,8 +196,10 @@ export default class BasePort extends EventEmitter {
    * @returns {boolean}
    */
   isAttached(socketId = null) {
-    if (this.isAddressable() && (socketId !== null)) {
-      if (this.sockets[socketId]) { return true; }
+    if (this.isAddressable() && socketId !== null) {
+      if (this.sockets[socketId]) {
+        return true;
+      }
       return false;
     }
     if (this.sockets.length) {
@@ -192,7 +212,9 @@ export default class BasePort extends EventEmitter {
     const attached = [];
     for (let idx = 0; idx < this.sockets.length; idx += 1) {
       const socket = this.sockets[idx];
-      if (socket) { attached.push(idx); }
+      if (socket) {
+        attached.push(idx);
+      }
     }
     return attached;
   }
@@ -210,13 +232,17 @@ export default class BasePort extends EventEmitter {
         throw new Error(`${this.getId()}: Socket ${socketId} not available`);
       }
       // eslint-disable-next-line max-len
-      const socket = /** @type {import("./InternalSocket").InternalSocket} */ (this.sockets[socketId]);
+      const socket = /** @type {import("./InternalSocket").InternalSocket} */ (
+        this.sockets[socketId]
+      );
       return socket.isConnected();
     }
 
     let connected = false;
     this.sockets.forEach((socket) => {
-      if (!socket) { return; }
+      if (!socket) {
+        return;
+      }
       if (socket.isConnected()) {
         connected = true;
       }
@@ -225,5 +251,7 @@ export default class BasePort extends EventEmitter {
   }
 
   /* eslint-disable class-methods-use-this */
-  canAttach() { return true; }
+  canAttach() {
+    return true;
+  }
 }

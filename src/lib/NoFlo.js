@@ -18,8 +18,8 @@
 // ### Graph interface
 //
 // [fbp-graph](https://github.com/flowbased/fbp-graph) is used for instantiating FBP graph definitions.
-import { graph } from 'fbp-graph';
-
+import { graph } from "fbp-graph";
+import { LegacyNetwork } from "./LegacyNetwork.js";
 // ## Network instantiation
 //
 // This function handles instantiation of NoFlo networks from a Graph object. It creates
@@ -63,63 +63,64 @@ import { graph } from 'fbp-graph';
 //
 // The options object can also be used for setting ComponentLoader options in this
 // network.
-import { Network } from './Network.js';
-import { LegacyNetwork } from './LegacyNetwork.js';
-import { deprecated, isBrowser } from './Platform.js';
+import { Network } from "./Network.js";
+import { deprecated, isBrowser } from "./Platform.js";
 
 export {
-  graph,
   Graph,
-  journal,
+  graph,
   Journal,
-} from 'fbp-graph';
-
-// ### Platform detection
-//
-// NoFlo works on both Node.js and the browser. Because some dependencies are different,
-// we need a way to detect which we're on.
-export { isBrowser } from './Platform.js';
-
+  journal,
+} from "fbp-graph";
 // ### Component Loader
 //
 // The [ComponentLoader](../ComponentLoader/) is responsible for finding and loading
 // NoFlo components. Component Loader uses [fbp-manifest](https://github.com/flowbased/fbp-manifest)
 // to find components and graphs by traversing the NPM dependency tree from a given root
 // directory on the file system.
-export { ComponentLoader } from './ComponentLoader.js';
-import { ComponentLoader } from './ComponentLoader.js';
+export { ComponentLoader } from "./ComponentLoader.js";
+// ### Platform detection
+//
+// NoFlo works on both Node.js and the browser. Because some dependencies are different,
+// we need a way to detect which we're on.
+export { isBrowser } from "./Platform.js";
+
+import { ComponentLoader } from "./ComponentLoader.js";
 
 // ### Component baseclasses
 //
 // These baseclasses can be used for defining NoFlo components.
-export { Component } from './Component.js';
-import { Component } from './Component.js';
+export { Component } from "./Component.js";
+
+import { Component } from "./Component.js";
 
 // ### NoFlo ports
 //
 // These classes are used for instantiating ports on NoFlo components.
-export { InPorts, OutPorts } from './Ports.js';
-import { InPorts, OutPorts } from './Ports.js';
+export { InPorts, OutPorts } from "./Ports.js";
 
-export { default as InPort } from './InPort.js';
-import InPort from './InPort.js';
+import { InPorts, OutPorts } from "./Ports.js";
 
-export { default as OutPort } from './OutPort.js';
-import OutPort from './OutPort.js';
+export { default as InPort } from "./InPort.js";
+
+import InPort from "./InPort.js";
+
+export { default as OutPort } from "./OutPort.js";
 
 // ### NoFlo sockets
 //
 // The NoFlo [internalSocket](InternalSocket.html) is used for connecting ports of
 // different components together in a network.
-import * as internalSocket from './InternalSocket.js';
-
-export { internalSocket };
+import * as internalSocket from "./InternalSocket.js";
+import OutPort from "./OutPort.js";
 
 // ### Information Packets
 //
 // NoFlo Information Packets are defined as "IP" objects.
-export { default as IP } from './IP.js';
-import IP from './IP.js';
+export { default as IP } from "./IP.js";
+export { internalSocket };
+
+import IP from "./IP.js";
 
 /**
  * @callback NetworkCallback
@@ -144,10 +145,10 @@ import IP from './IP.js';
  * @returns {Promise<Network|LegacyNetwork>}
  */
 export function createNetwork(graphInstance, options, callback) {
-  if (typeof options !== 'object') {
+  if (typeof options !== "object") {
     options = {};
   }
-  if (typeof options.subscribeGraph === 'undefined') {
+  if (typeof options.subscribeGraph === "undefined") {
     options.subscribeGraph = false;
   }
 
@@ -157,17 +158,20 @@ export function createNetwork(graphInstance, options, callback) {
   const network = new NetworkType(graphInstance, options);
 
   // Ensure components are loaded before continuing
-  const promise = network.loader.listComponents()
-    .then(() => {
-      if (options.delay) {
-        // In case of delayed execution we don't wire it up
-        return Promise.resolve(network);
-      }
-      const connected = /** @type {Promise<Network|LegacyNetwork>} */ (network.connect());
-      return connected.then(() => network.start());
-    });
+  const promise = network.loader.listComponents().then(() => {
+    if (options.delay) {
+      // In case of delayed execution we don't wire it up
+      return Promise.resolve(network);
+    }
+    const connected = /** @type {Promise<Network|LegacyNetwork>} */ (
+      network.connect()
+    );
+    return connected.then(() => network.start());
+  });
   if (callback) {
-    deprecated('Providing a callback to NoFlo.createNetwork is deprecated, use Promises');
+    deprecated(
+      "Providing a callback to NoFlo.createNetwork is deprecated, use Promises",
+    );
     promise.then((nw) => {
       callback(null, nw);
     }, callback);
@@ -191,10 +195,13 @@ export function createNetwork(graphInstance, options, callback) {
  * @returning {Promise<Network>}
  */
 export function loadFile(file, options, callback) {
-  const promise = graph.loadFile(file)
+  const promise = graph
+    .loadFile(file)
     .then((graphInstance) => createNetwork(graphInstance, options));
   if (callback) {
-    deprecated('Providing a callback to NoFlo.loadFile is deprecated, use Promises');
+    deprecated(
+      "Providing a callback to NoFlo.loadFile is deprecated, use Promises",
+    );
     promise.then((network) => {
       callback(null, network);
     }, callback);
@@ -230,8 +237,9 @@ export function saveFile(graphInstance, file, callback) {
 //       // Do something with results
 //     });
 //
-export { asCallback, asPromise } from './AsCallback.js';
-import { asCallback, asPromise } from './AsCallback.js';
+export { asCallback, asPromise } from "./AsCallback.js";
+
+import { asCallback, asPromise } from "./AsCallback.js";
 
 // ## Generating components from JavaScript functions
 //
@@ -245,8 +253,9 @@ import { asCallback, asPromise } from './AsCallback.js';
 //       });
 //     };
 //
-export { asComponent } from './AsComponent.js';
-import { asComponent } from './AsComponent.js';
+export { asComponent } from "./AsComponent.js";
+
+import { asComponent } from "./AsComponent.js";
 
 export default {
   ...graph,

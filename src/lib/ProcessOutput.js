@@ -4,10 +4,10 @@
 //     NoFlo may be freely distributed under the MIT license
 
 /* eslint-disable no-underscore-dangle */
-import debug from 'debug';
-import IP from './IP.js';
+import debug from "debug";
+import IP from "./IP.js";
 
-const debugComponent = debug('noflo:component');
+const debugComponent = debug("noflo:component");
 
 // Checks if a value is an Error
 /**
@@ -15,8 +15,10 @@ const debugComponent = debug('noflo:component');
  * @returns {boolean}
  */
 function isError(err) {
-  return err instanceof Error
-    || (Array.isArray(err) && (err.length > 0) && err[0] instanceof Error);
+  return (
+    err instanceof Error ||
+    (Array.isArray(err) && err.length > 0 && err[0] instanceof Error)
+  );
 }
 
 export default class ProcessOutput {
@@ -40,13 +42,24 @@ export default class ProcessOutput {
    */
   error(err) {
     const errs = Array.isArray(err) ? err : [err];
-    if (this.ports.ports.error
-      && (this.ports.ports.error.isAttached() || !this.ports.ports.error.isRequired())) {
-      if (errs.length > 1) { this.sendIP('error', new IP('openBracket')); }
-      errs.forEach((e) => { this.sendIP('error', e); });
-      if (errs.length > 1) { this.sendIP('error', new IP('closeBracket')); }
+    if (
+      this.ports.ports.error &&
+      (this.ports.ports.error.isAttached() ||
+        !this.ports.ports.error.isRequired())
+    ) {
+      if (errs.length > 1) {
+        this.sendIP("error", new IP("openBracket"));
+      }
+      errs.forEach((e) => {
+        this.sendIP("error", e);
+      });
+      if (errs.length > 1) {
+        this.sendIP("error", new IP("closeBracket"));
+      }
     } else {
-      errs.forEach((e) => { throw e; });
+      errs.forEach((e) => {
+        throw e;
+      });
     }
   }
 
@@ -57,18 +70,26 @@ export default class ProcessOutput {
    * @returns {void}
    */
   sendIP(port, packet) {
-    const ip = IP.isIP(packet) ? packet : new IP('data', packet);
-    if ((this.scope !== null) && (ip.scope === null)) { ip.scope = this.scope; }
+    const ip = IP.isIP(packet) ? packet : new IP("data", packet);
+    if (this.scope !== null && ip.scope === null) {
+      ip.scope = this.scope;
+    }
 
     if (!this.nodeInstance.outPorts.ports[port]) {
-      throw new Error(`Node ${this.nodeInstance.nodeId} does not have outport ${port}`);
+      throw new Error(
+        `Node ${this.nodeInstance.nodeId} does not have outport ${port}`,
+      );
     }
 
     // eslint-disable-next-line max-len
-    const portImpl = /** @type {import("./OutPort").default} */ (this.nodeInstance.outPorts.ports[port]);
+    const portImpl = /** @type {import("./OutPort").default} */ (
+      this.nodeInstance.outPorts.ports[port]
+    );
 
-    if (portImpl.isAddressable() && (ip.index === null)) {
-      throw new Error(`Sending packets to addressable port ${this.nodeInstance.nodeId} ${port} requires specifying index`);
+    if (portImpl.isAddressable() && ip.index === null) {
+      throw new Error(
+        `Sending packets to addressable port ${this.nodeInstance.nodeId} ${port} requires specifying index`,
+      );
     }
 
     if (this.nodeInstance.isOrdered()) {
@@ -97,19 +118,26 @@ export default class ProcessOutput {
     const componentPorts = [];
     let mapIsInPorts = false;
     Object.keys(this.ports.ports).forEach((port) => {
-      if ((port !== 'error') && (port !== 'ports') && (port !== '_callbacks')) { componentPorts.push(port); }
-      if (!mapIsInPorts && (outputMap != null) && (typeof outputMap === 'object') && (Object.keys(outputMap).indexOf(port) !== -1)) {
+      if (port !== "error" && port !== "ports" && port !== "_callbacks") {
+        componentPorts.push(port);
+      }
+      if (
+        !mapIsInPorts &&
+        outputMap != null &&
+        typeof outputMap === "object" &&
+        Object.keys(outputMap).indexOf(port) !== -1
+      ) {
         mapIsInPorts = true;
       }
     });
 
-    if ((componentPorts.length === 1) && !mapIsInPorts) {
+    if (componentPorts.length === 1 && !mapIsInPorts) {
       this.sendIP(componentPorts[0], outputMap);
       return;
     }
 
-    if ((componentPorts.length > 1) && !mapIsInPorts) {
-      throw new Error('Port must be specified for sending output');
+    if (componentPorts.length > 1 && !mapIsInPorts) {
+      throw new Error("Port must be specified for sending output");
     }
 
     Object.keys(outputMap).forEach((port) => {
@@ -135,7 +163,7 @@ export default class ProcessOutput {
    * @param {Object<string, any>} [options]
    */
   pass(data, options = {}) {
-    if (!('out' in this.ports)) {
+    if (!("out" in this.ports)) {
       throw new Error('output.pass() requires port "out" to be present');
     }
     Object.keys(options).forEach((key) => {
@@ -143,7 +171,7 @@ export default class ProcessOutput {
       this.ip[key] = val;
     });
     this.ip.data = data;
-    this.sendIP('out', this.ip);
+    this.sendIP("out", this.ip);
     this.done();
   }
 
@@ -154,25 +182,33 @@ export default class ProcessOutput {
   done(error) {
     this.result.__resolved = true;
     this.nodeInstance.activate(this.context);
-    if (error) { this.error(error); }
+    if (error) {
+      this.error(error);
+    }
 
     const isLast = () => {
       // We only care about real output sets with processing data
       const resultsOnly = this.nodeInstance.outputQ.filter((q) => {
-        if (!q.__resolved) { return true; }
-        if ((Object.keys(q).length === 2) && q.__bracketClosingAfter) {
+        if (!q.__resolved) {
+          return true;
+        }
+        if (Object.keys(q).length === 2 && q.__bracketClosingAfter) {
           return false;
         }
         return true;
       });
       const pos = resultsOnly.indexOf(this.result);
       const len = resultsOnly.length;
-      const {
-        load,
-      } = this.nodeInstance;
-      if (pos === (len - 1)) { return true; }
-      if ((pos === -1) && (load === (len + 1))) { return true; }
-      if ((len <= 1) && (load === 1)) { return true; }
+      const { load } = this.nodeInstance;
+      if (pos === len - 1) {
+        return true;
+      }
+      if (pos === -1 && load === len + 1) {
+        return true;
+      }
+      if (len <= 1 && load === 1) {
+        return true;
+      }
       return false;
     };
     if (this.nodeInstance.isOrdered() && isLast()) {
@@ -181,24 +217,34 @@ export default class ProcessOutput {
       // last running process function.
       Object.keys(this.nodeInstance.bracketContext.in).forEach((port) => {
         const contexts = this.nodeInstance.bracketContext.in[port];
-        if (!contexts[this.scope]) { return; }
+        if (!contexts[this.scope]) {
+          return;
+        }
         const nodeContext = contexts[this.scope];
-        if (!nodeContext.length) { return; }
+        if (!nodeContext.length) {
+          return;
+        }
         const context = nodeContext[nodeContext.length - 1];
         // eslint-disable-next-line max-len
-        const inPorts = /** @type {import("./InPort").default} */ (this.nodeInstance.inPorts.ports[context.source]);
+        const inPorts = /** @type {import("./InPort").default} */ (
+          this.nodeInstance.inPorts.ports[context.source]
+        );
         const buf = inPorts.getBuffer(context.ip.scope, context.ip.index);
-        while (buf.length > 0 && buf[0].type === 'closeBracket') {
+        while (buf.length > 0 && buf[0].type === "closeBracket") {
           const ip = inPorts.get(context.ip.scope, context.ip.index);
           const ctx = nodeContext.pop();
           ctx.closeIp = ip;
-          if (!this.result.__bracketClosingAfter) { this.result.__bracketClosingAfter = []; }
+          if (!this.result.__bracketClosingAfter) {
+            this.result.__bracketClosingAfter = [];
+          }
           this.result.__bracketClosingAfter.push(ctx);
         }
       });
     }
 
-    debugComponent(`${this.nodeInstance.nodeId} finished processing ${this.nodeInstance.load}`);
+    debugComponent(
+      `${this.nodeInstance.nodeId} finished processing ${this.nodeInstance.load}`,
+    );
 
     this.nodeInstance.deactivate(this.context);
   }

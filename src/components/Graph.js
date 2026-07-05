@@ -9,10 +9,10 @@
     import/prefer-default-export,
 */
 
-import { graph as fbpGraph } from 'fbp-graph';
-import { Component } from '../lib/Component.js';
-import { InPorts, OutPorts } from '../lib/Ports.js';
-import { Network } from '../lib/Network.js';
+import { graph as fbpGraph } from "fbp-graph";
+import { Component } from "../lib/Component.js";
+import { Network } from "../lib/Network.js";
+import { InPorts, OutPorts } from "../lib/Ports.js";
 
 // The Graph component is used to wrap NoFlo Networks into components inside
 // another network.
@@ -36,15 +36,18 @@ export class Graph extends Component {
 
     this.inPorts = new InPorts({
       graph: {
-        datatype: 'all',
-        description: 'NoFlo graph definition to be used with the subgraph component',
+        datatype: "all",
+        description:
+          "NoFlo graph definition to be used with the subgraph component",
         required: true,
       },
     });
     this.outPorts = new OutPorts();
 
-    this.inPorts.ports.graph.on('ip', (packet) => {
-      if (packet.type !== 'data') { return; }
+    this.inPorts.ports.graph.on("ip", (packet) => {
+      if (packet.type !== "data") {
+        return;
+      }
       // TODO: Port this part to Process API and use output.error method instead
       this.setGraph(packet.data).catch(this.error);
     });
@@ -56,20 +59,26 @@ export class Graph extends Component {
    */
   setGraph(graph) {
     this.ready = false;
-    if (typeof graph === 'object') {
-      if (typeof graph.addNode === 'function') {
+    if (typeof graph === "object") {
+      if (typeof graph.addNode === "function") {
         // Existing Graph object
         return this.createNetwork(graph);
       }
       // JSON definition of a graph
-      return fbpGraph.loadJSON(graph)
+      return fbpGraph
+        .loadJSON(graph)
         .then((instance) => this.createNetwork(instance));
     }
     let graphName = graph;
-    if ((graphName.substr(0, 1) !== '/') && (graphName.substr(1, 1) !== ':') && process?.cwd) {
+    if (
+      graphName.substr(0, 1) !== "/" &&
+      graphName.substr(1, 1) !== ":" &&
+      process?.cwd
+    ) {
       graphName = `${process.cwd()}/${graphName}`;
     }
-    return fbpGraph.loadFile(graphName)
+    return fbpGraph
+      .loadFile(graphName)
       .then((instance) => this.createNetwork(instance));
   }
 
@@ -78,7 +87,7 @@ export class Graph extends Component {
    * @returns {Promise<void>}
    */
   createNetwork(graph) {
-    this.description = graph.properties.description || '';
+    this.description = graph.properties.description || "";
     this.icon = graph.properties.icon || this.icon;
 
     const graphObj = graph;
@@ -91,11 +100,11 @@ export class Graph extends Component {
       baseDir: this.baseDir || undefined,
     });
 
-    return network
-      .loader.listComponents()
+    return network.loader
+      .listComponents()
       .then(() => {
         this.network = network;
-        this.emit('network', network);
+        this.emit("network", network);
         // Subscribe to network lifecycle
         this.subscribeNetwork(network);
         // Wire the network up
@@ -126,7 +135,7 @@ export class Graph extends Component {
      * @type {Array<SubgraphContext>}
      */
     const contexts = [];
-    network.on('start', () => {
+    network.on("start", () => {
       const ctx = {
         activated: false,
         deactivated: false,
@@ -135,9 +144,11 @@ export class Graph extends Component {
       contexts.push(ctx);
       this.activate(ctx);
     });
-    network.on('end', () => {
+    network.on("end", () => {
       const ctx = contexts.pop();
-      if (!ctx) { return; }
+      if (!ctx) {
+        return;
+      }
       this.deactivate(ctx);
     });
   }
@@ -191,19 +202,20 @@ export class Graph extends Component {
   }
 
   setToReady() {
-    if ((typeof process !== 'undefined') && process.execPath && (process.execPath.indexOf('node') !== -1)) {
+    if (
+      typeof process !== "undefined" &&
+      process.execPath &&
+      process.execPath.indexOf("node") !== -1
+    ) {
       process.nextTick(() => {
         this.ready = true;
-        return this.emit('ready');
+        return this.emit("ready");
       });
     } else {
-      setTimeout(
-        () => {
-          this.ready = true;
-          return this.emit('ready');
-        },
-        0,
-      );
+      setTimeout(() => {
+        this.ready = true;
+        return this.emit("ready");
+      }, 0);
     }
   }
 
@@ -222,12 +234,18 @@ export class Graph extends Component {
     Object.keys(inPorts).forEach((portName) => {
       const port = inPorts[portName];
       const targetPortName = this.isExportedInport(port, name, portName);
-      if (typeof targetPortName !== 'string') { return; }
+      if (typeof targetPortName !== "string") {
+        return;
+      }
       this.inPorts.add(targetPortName, port);
-      this.inPorts.ports[targetPortName].on('connect', () => {
+      this.inPorts.ports[targetPortName].on("connect", () => {
         // Start the network implicitly if we're starting to get data
-        if (this.starting || !this.network) { return; }
-        if (this.network.isStarted()) { return; }
+        if (this.starting || !this.network) {
+          return;
+        }
+        if (this.network.isStarted()) {
+          return;
+        }
         if (this.network.startupDate) {
           // Network was started, but did finish. Re-start simply
           this.network.setStarted(true);
@@ -241,7 +259,9 @@ export class Graph extends Component {
     Object.keys(outPorts).forEach((portName) => {
       const port = outPorts[portName];
       const targetPortName = this.isExportedOutport(port, name, portName);
-      if (typeof targetPortName !== 'string') { return; }
+      if (typeof targetPortName !== "string") {
+        return;
+      }
       this.outPorts.add(targetPortName, port);
     });
 
@@ -264,7 +284,7 @@ export class Graph extends Component {
     this.starting = true;
     if (!this.isReady()) {
       return new Promise((resolve, reject) => {
-        this.once('ready', () => {
+        this.once("ready", () => {
           this.setUp().then(resolve, reject);
         });
       });
@@ -272,10 +292,9 @@ export class Graph extends Component {
     if (!this.network) {
       return Promise.resolve();
     }
-    return this.network.start()
-      .then(() => {
-        this.starting = false;
-      });
+    return this.network.start().then(() => {
+      this.starting = false;
+    });
   }
 
   tearDown() {
@@ -283,8 +302,7 @@ export class Graph extends Component {
     if (!this.network) {
       return Promise.resolve();
     }
-    return this.network.stop()
-      .then(() => {});
+    return this.network.stop().then(() => {});
   }
 }
 

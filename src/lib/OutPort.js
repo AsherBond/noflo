@@ -1,8 +1,8 @@
 //     NoFlo - Flow-Based Programming for JavaScript
 //     (c) 2014-2017 Flowhub UG
 //     NoFlo may be freely distributed under the MIT license
-import BasePort from './BasePort.js';
-import IP from './IP.js';
+import BasePort from "./BasePort.js";
+import IP from "./IP.js";
 
 // ## NoFlo outport
 //
@@ -22,8 +22,10 @@ export default class OutPort extends BasePort {
    */
   constructor(options = {}) {
     const opts = options;
-    if (opts.scoped == null) { opts.scoped = true; }
-    if (typeof opts.caching !== 'boolean') {
+    if (opts.scoped == null) {
+      opts.scoped = true;
+    }
+    if (typeof opts.caching !== "boolean") {
       opts.caching = false;
     }
     super(opts);
@@ -41,7 +43,7 @@ export default class OutPort extends BasePort {
    */
   attach(socket, index = null) {
     super.attach(socket, index);
-    if (this.isCaching() && (this.cache[`${index}`] != null)) {
+    if (this.isCaching() && this.cache[`${index}`] != null) {
       this.send(this.cache[`${index}`], index);
     }
   }
@@ -53,7 +55,9 @@ export default class OutPort extends BasePort {
     const sockets = this.getSockets(index);
     this.checkRequired(sockets);
     sockets.forEach((socket) => {
-      if (!socket) { return; }
+      if (!socket) {
+        return;
+      }
       socket.connect();
     });
   }
@@ -66,7 +70,9 @@ export default class OutPort extends BasePort {
     const sockets = this.getSockets(index);
     this.checkRequired(sockets);
     sockets.forEach((socket) => {
-      if (!socket) { return; }
+      if (!socket) {
+        return;
+      }
       socket.beginGroup(group);
     });
   }
@@ -78,11 +84,13 @@ export default class OutPort extends BasePort {
   send(data, index = null) {
     const sockets = this.getSockets(index);
     this.checkRequired(sockets);
-    if (this.isCaching() && (data !== this.cache[`${index}`])) {
+    if (this.isCaching() && data !== this.cache[`${index}`]) {
       this.cache[`${index}`] = data;
     }
     sockets.forEach((socket) => {
-      if (!socket) { return; }
+      if (!socket) {
+        return;
+      }
       socket.send(data);
     });
   }
@@ -94,7 +102,9 @@ export default class OutPort extends BasePort {
     const sockets = this.getSockets(index);
     this.checkRequired(sockets);
     sockets.forEach((socket) => {
-      if (!socket) { return; }
+      if (!socket) {
+        return;
+      }
       socket.endGroup();
     });
   }
@@ -106,7 +116,9 @@ export default class OutPort extends BasePort {
     const sockets = this.getSockets(index);
     this.checkRequired(sockets);
     sockets.forEach((socket) => {
-      if (!socket) { return; }
+      if (!socket) {
+        return;
+      }
       socket.disconnect();
     });
   }
@@ -125,15 +137,15 @@ export default class OutPort extends BasePort {
     if (IP.isIP(type)) {
       ip = /** @type {IP} */ (type);
       idx = ip.index;
-    } else if (typeof type === 'string') {
+    } else if (typeof type === "string") {
       ip = new IP(type, data, options);
     } else {
-      throw new Error('Unknown type for IP type');
+      throw new Error("Unknown type for IP type");
     }
     const sockets = this.getSockets(idx);
     this.checkRequired(sockets);
 
-    if (ip.datatype === 'all') {
+    if (ip.datatype === "all") {
       // Stamp non-specific IP objects with port datatype
       ip.datatype = this.getDataType();
     }
@@ -142,18 +154,23 @@ export default class OutPort extends BasePort {
       ip.schema = this.getSchema();
     }
 
-    const cachedData = this.cache[`${idx}`] != null ? this.cache[`${idx}`].data : undefined;
+    const cachedData =
+      this.cache[`${idx}`] != null ? this.cache[`${idx}`].data : undefined;
     if (this.isCaching() && data !== cachedData) {
       this.cache[`${idx}`] = ip;
     }
     let pristine = true;
     sockets.forEach((socket) => {
-      if (!socket) { return; }
+      if (!socket) {
+        return;
+      }
       if (pristine) {
         socket.post(ip, autoConnect);
         pristine = false;
       } else {
-        if (ip.clonable) { ip = ip.clone(); }
+        if (ip.clonable) {
+          ip = ip.clone();
+        }
         socket.post(ip, autoConnect);
       }
     });
@@ -166,7 +183,7 @@ export default class OutPort extends BasePort {
    * @param {number|null} [index]
    */
   openBracket(data = null, options = {}, index = null) {
-    return this.sendIP('openBracket', data, options, index);
+    return this.sendIP("openBracket", data, options, index);
   }
 
   /**
@@ -175,7 +192,7 @@ export default class OutPort extends BasePort {
    * @param {number|null} [index]
    */
   data(data, options = {}, index = null) {
-    return this.sendIP('data', data, options, index);
+    return this.sendIP("data", data, options, index);
   }
 
   /**
@@ -184,14 +201,14 @@ export default class OutPort extends BasePort {
    * @param {number|null} [index]
    */
   closeBracket(data = null, options = {}, index = null) {
-    return this.sendIP('closeBracket', data, options, index);
+    return this.sendIP("closeBracket", data, options, index);
   }
 
   /**
    * @param {Array<import("./InternalSocket").InternalSocket|void>} sockets
    */
   checkRequired(sockets) {
-    if ((sockets.length === 0) && this.isRequired()) {
+    if (sockets.length === 0 && this.isRequired()) {
       throw new Error(`${this.getId()}: No connections available`);
     }
   }
@@ -213,7 +230,9 @@ export default class OutPort extends BasePort {
       return [this.sockets[idx]];
     }
     if (index !== null) {
-      throw new Error(`${this.getId()} is not addressable port and index ${index} provided`);
+      throw new Error(
+        `${this.getId()} is not addressable port and index ${index} provided`,
+      );
     }
     // Regular sockets affect all outbound connections
     return this.sockets;

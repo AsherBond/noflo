@@ -2,9 +2,9 @@
 //     NoFlo - Flow-Based Programming for JavaScript
 //     (c) 2014-2017 Flowhub UG
 //     NoFlo may be freely distributed under the MIT license
-import { EventEmitter } from 'node:events';
-import InPort from './InPort.js';
-import OutPort from './OutPort.js';
+import { EventEmitter } from "node:events";
+import InPort from "./InPort.js";
+import OutPort from "./OutPort.js";
 
 /**
  * @typedef {import("./BasePort").BaseOptions} PortOptions
@@ -24,7 +24,9 @@ class Ports extends EventEmitter {
     this.model = model;
     /** @type {Object<string, import("./BasePort").default>} */
     this.ports = {};
-    if (!ports) { return; }
+    if (!ports) {
+      return;
+    }
     Object.keys(ports).forEach((name) => {
       const options = ports[name];
       this.add(name, options);
@@ -36,20 +38,24 @@ class Ports extends EventEmitter {
    * @param {Object|import("./BasePort").default|PortOptions} [options]
    */
   add(name, options = {}) {
-    if ((name === 'add') || (name === 'remove')) {
-      throw new Error('Add and remove are restricted port names');
+    if (name === "add" || name === "remove") {
+      throw new Error("Add and remove are restricted port names");
     }
 
     /* eslint-disable no-useless-escape */
     if (!name.match(/^[a-z0-9_./]+$/)) {
-      throw new Error(`Port names can only contain lowercase alphanumeric characters and underscores. '${name}' not allowed`);
+      throw new Error(
+        `Port names can only contain lowercase alphanumeric characters and underscores. '${name}' not allowed`,
+      );
     }
 
     // Remove previous implementation
-    if (this.ports[name]) { this.remove(name); }
+    if (this.ports[name]) {
+      this.remove(name);
+    }
 
     const maybePort = /** @type {import("./BasePort").default} */ (options);
-    if ((typeof maybePort === 'object') && maybePort.canAttach) {
+    if (typeof maybePort === "object" && maybePort.canAttach) {
       this.ports[name] = maybePort;
     } else {
       const Model = this.model;
@@ -58,7 +64,7 @@ class Ports extends EventEmitter {
 
     this[name] = this.ports[name];
 
-    this.emit('add', name);
+    this.emit("add", name);
 
     return this; // chainable
   }
@@ -67,10 +73,12 @@ class Ports extends EventEmitter {
    * @param {string} name
    */
   remove(name) {
-    if (!this.ports[name]) { throw new Error(`Port ${name} not defined`); }
+    if (!this.ports[name]) {
+      throw new Error(`Port ${name} not defined`);
+    }
     delete this.ports[name];
     delete this[name];
-    this.emit('remove', name);
+    this.emit("remove", name);
 
     return this; // chainable
   }
@@ -105,31 +113,41 @@ export class OutPorts extends Ports {
 
   connect(name, socketId) {
     const port = /** @type {OutPort} */ (this.ports[name]);
-    if (!port) { throw new Error(`Port ${name} not available`); }
+    if (!port) {
+      throw new Error(`Port ${name} not available`);
+    }
     port.connect(socketId);
   }
 
   beginGroup(name, group, socketId) {
     const port = /** @type {OutPort} */ (this.ports[name]);
-    if (!port) { throw new Error(`Port ${name} not available`); }
+    if (!port) {
+      throw new Error(`Port ${name} not available`);
+    }
     port.beginGroup(group, socketId);
   }
 
   send(name, data, socketId) {
     const port = /** @type {OutPort} */ (this.ports[name]);
-    if (!port) { throw new Error(`Port ${name} not available`); }
+    if (!port) {
+      throw new Error(`Port ${name} not available`);
+    }
     port.send(data, socketId);
   }
 
   endGroup(name, socketId) {
     const port = /** @type {OutPort} */ (this.ports[name]);
-    if (!port) { throw new Error(`Port ${name} not available`); }
+    if (!port) {
+      throw new Error(`Port ${name} not available`);
+    }
     port.endGroup(socketId);
   }
 
   disconnect(name, socketId) {
     const port = /** @type {OutPort} */ (this.ports[name]);
-    if (!port) { throw new Error(`Port ${name} not available`); }
+    if (!port) {
+      throw new Error(`Port ${name} not available`);
+    }
     port.disconnect(socketId);
   }
 }
@@ -144,7 +162,9 @@ export class OutPorts extends Ports {
 export function normalizePortName(name) {
   const port = { name };
   // Regular port
-  if (name.indexOf('[') === -1) { return port; }
+  if (name.indexOf("[") === -1) {
+    return port;
+  }
   // Addressable port with index
   const matched = name.match(/(.*)\[([0-9]+)\]/);
   if (!matched || matched.length < 3) {

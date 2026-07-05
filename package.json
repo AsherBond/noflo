@@ -47,6 +47,7 @@
     "url": "git://github.com/noflo/noflo.git"
   },
   "scripts": {
+    "format": "npx @biomejs/biome check --use-editorconfig=true --write src/ spec/*.mjs",
     "lint": "npx @biomejs/biome lint src/ spec/*.mjs",
     "prebuild:node": "replace 'import.meta.dirname' '__dirname' src/lib/loader/NodeJs.js && replace 'import getParams from' 'import * as getParams from' src/lib/AsComponent.js && replace 'import\\(cacheBusted\\)' 'Promise.resolve().then(() => require(cPath))' src/lib/loader/NodeJs.js",
     "build:node": "tsc",

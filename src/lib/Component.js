@@ -8,20 +8,20 @@
     no-underscore-dangle,
     import/prefer-default-export,
 */
-import { EventEmitter } from 'node:events';
-import debug from 'debug';
-import { InPorts, OutPorts, normalizePortName } from './Ports.js';
-import { deprecated } from './Platform.js';
-import InPort from './InPort.js'; // eslint-disable-line no-unused-vars
-import OutPort from './OutPort.js'; // eslint-disable-line no-unused-vars
-import ProcessContext from './ProcessContext.js';
-import ProcessInput from './ProcessInput.js';
-import ProcessOutput from './ProcessOutput.js';
-import IP from './IP.js'; // eslint-disable-line no-unused-vars
+import { EventEmitter } from "node:events";
+import debug from "debug";
+import InPort from "./InPort.js"; // eslint-disable-line no-unused-vars
+import IP from "./IP.js"; // eslint-disable-line no-unused-vars
+import OutPort from "./OutPort.js"; // eslint-disable-line no-unused-vars
+import { deprecated } from "./Platform.js";
+import { InPorts, normalizePortName, OutPorts } from "./Ports.js";
+import ProcessContext from "./ProcessContext.js";
+import ProcessInput from "./ProcessInput.js";
+import ProcessOutput from "./ProcessOutput.js";
 
-const debugComponent = debug('noflo:component');
-const debugBrackets = debug('noflo:component:brackets');
-const debugSend = debug('noflo:component:send');
+const debugComponent = debug("noflo:component");
+const debugBrackets = debug("noflo:component:brackets");
+const debugSend = debug("noflo:component:send");
 
 /**
  * @callback ProcessingFunction
@@ -63,14 +63,16 @@ export class Component extends EventEmitter {
   /**
    * @param {ComponentOptions} [options]
    */
-  constructor(options = { }) {
+  constructor(options = {}) {
     super();
     const opts = options;
     // Prepare inports, if any were given in options.
     // They can also be set up imperatively after component
     // instantiation by using the `component.inPorts.add`
     // method.
-    if (!opts.inPorts) { opts.inPorts = {}; }
+    if (!opts.inPorts) {
+      opts.inPorts = {};
+    }
     if (opts.inPorts instanceof InPorts) {
       this.inPorts = opts.inPorts;
     } else {
@@ -81,7 +83,9 @@ export class Component extends EventEmitter {
     // They can also be set up imperatively after component
     // instantiation by using the `component.outPorts.add`
     // method.
-    if (!opts.outPorts) { opts.outPorts = {}; }
+    if (!opts.outPorts) {
+      opts.outPorts = {};
+    }
     if (opts.outPorts instanceof OutPorts) {
       this.outPorts = opts.outPorts;
     } else {
@@ -89,8 +93,8 @@ export class Component extends EventEmitter {
     }
 
     // Set the default component icon and description
-    this.icon = opts.icon ? opts.icon : '';
-    this.description = opts.description ? opts.description : '';
+    this.icon = opts.icon ? opts.icon : "";
+    this.description = opts.description ? opts.description : "";
 
     /** @type {string|null} */
     this.componentName = null;
@@ -119,19 +123,20 @@ export class Component extends EventEmitter {
 
     // Whether the component should activate when it
     // receives packets
-    this.activateOnInput = opts.activateOnInput != null ? opts.activateOnInput : true;
+    this.activateOnInput =
+      opts.activateOnInput != null ? opts.activateOnInput : true;
 
     // Bracket forwarding rules. By default we forward
     // brackets from `in` port to `out` and `error` ports.
     if (!opts.forwardBrackets) {
-      opts.forwardBrackets = { in: ['out', 'error'] };
+      opts.forwardBrackets = { in: ["out", "error"] };
     }
     this.forwardBrackets = opts.forwardBrackets;
 
     // The component's process function can either be
     // passed in opts, or given imperatively after
     // instantation using the `component.process` method.
-    if (typeof opts.process === 'function') {
+    if (typeof opts.process === "function") {
       this.process(opts.process);
     }
 
@@ -145,21 +150,29 @@ export class Component extends EventEmitter {
     this.__openConnections = 0;
   }
 
-  getDescription() { return this.description; }
+  getDescription() {
+    return this.description;
+  }
 
-  isReady() { return true; }
+  isReady() {
+    return true;
+  }
 
-  isSubgraph() { return false; }
+  isSubgraph() {
+    return false;
+  }
 
   /**
    * @param {string} icon - Updated icon for the component
    */
   setIcon(icon) {
     this.icon = icon;
-    this.emit('icon', this.icon);
+    this.emit("icon", this.icon);
   }
 
-  getIcon() { return this.icon; }
+  getIcon() {
+    return this.icon;
+  }
 
   // ### Error emitting helper
   //
@@ -172,10 +185,9 @@ export class Component extends EventEmitter {
    * @param {string} [errorPort]
    * @param {string | null} [scope]
    */
-  error(e, groups = [], errorPort = 'error', scope = null) {
+  error(e, groups = [], errorPort = "error", scope = null) {
     const outPort = /** @type {OutPort} */ (this.outPorts.ports[errorPort]);
-    if (outPort
-      && (outPort.isAttached() || !outPort.isRequired())) {
+    if (outPort && (outPort.isAttached() || !outPort.isRequired())) {
       groups.forEach((group) => {
         outPort.openBracket(group, { scope });
       });
@@ -254,15 +266,16 @@ export class Component extends EventEmitter {
           // setUp returned a Promise
           res.then(resolve, reject);
         }
-      })
-        .then(() => {
-          this.started = true;
-          this.emit('start');
-          return Promise.resolve();
-        });
+      }).then(() => {
+        this.started = true;
+        this.emit("start");
+        return Promise.resolve();
+      });
     }
     if (callback) {
-      deprecated('Providing a callback to Component.start is deprecated, use Promises');
+      deprecated(
+        "Providing a callback to Component.start is deprecated, use Promises",
+      );
       promise.then(() => {
         callback(null);
       }, callback);
@@ -297,30 +310,35 @@ export class Component extends EventEmitter {
         res.then(resolve, reject);
       }
     })
-      .then(() => new Promise((resolve) => {
-        if (this.load > 0) {
-          // Some in-flight processes, wait for them to finish
-          /**
-           * @param {number} load
-           */
-          const checkLoad = (load) => {
-            if (load > 0) {
+      .then(
+        () =>
+          new Promise((resolve) => {
+            if (this.load > 0) {
+              // Some in-flight processes, wait for them to finish
+              /**
+               * @param {number} load
+               */
+              const checkLoad = (load) => {
+                if (load > 0) {
+                  return;
+                }
+                this.removeListener("deactivate", checkLoad);
+                resolve();
+              };
+              this.on("deactivate", checkLoad);
               return;
             }
-            this.removeListener('deactivate', checkLoad);
             resolve();
-          };
-          this.on('deactivate', checkLoad);
-          return;
-        }
-        resolve();
-      }))
+          }),
+      )
       .then(() => {
         // Clear contents of inport buffers
         const inPorts = this.inPorts.ports || this.inPorts;
         Object.keys(inPorts).forEach((portName) => {
           const inPort = /** @type {InPort} */ (inPorts[portName]);
-          if (typeof inPort.clear !== 'function') { return; }
+          if (typeof inPort.clear !== "function") {
+            return;
+          }
           inPort.clear();
         });
         // Clear bracket context
@@ -332,11 +350,13 @@ export class Component extends EventEmitter {
           return Promise.resolve();
         }
         this.started = false;
-        this.emit('end');
+        this.emit("end");
         return Promise.resolve();
       });
     if (callback) {
-      deprecated('Providing a callback to Component.shutdown is deprecated, use Promises');
+      deprecated(
+        "Providing a callback to Component.shutdown is deprecated, use Promises",
+      );
       promise.then(() => {
         callback(null);
       }, callback);
@@ -375,7 +395,9 @@ export class Component extends EventEmitter {
   // NoFlo Process API
   isLegacy() {
     // Process API
-    if (this.handle) { return false; }
+    if (this.handle) {
+      return false;
+    }
     // Legacy
     return true;
   }
@@ -386,18 +408,22 @@ export class Component extends EventEmitter {
    * @returns {this}
    */
   process(handle) {
-    if (typeof handle !== 'function') {
-      throw new Error('Process handler must be a function');
+    if (typeof handle !== "function") {
+      throw new Error("Process handler must be a function");
     }
     if (!this.inPorts) {
-      throw new Error('Component ports must be defined before process function');
+      throw new Error(
+        "Component ports must be defined before process function",
+      );
     }
     this.prepareForwarding();
     this.handle = handle;
     Object.keys(this.inPorts.ports).forEach((name) => {
       const port = /** @type {InPort} */ (this.inPorts.ports[name]);
-      if (!port.name) { port.name = name; }
-      port.on('ip', (ip) => this.handleIP(ip, port));
+      if (!port.name) {
+        port.name = name;
+      }
+      port.on("ip", (ip) => this.handleIP(ip, port));
     });
     return this;
   }
@@ -410,7 +436,7 @@ export class Component extends EventEmitter {
    */
   isForwardingInport(port) {
     let portName;
-    if (typeof port === 'string') {
+    if (typeof port === "string") {
       portName = port;
     } else {
       portName = port.name;
@@ -429,14 +455,14 @@ export class Component extends EventEmitter {
    * @returns {boolean}
    */
   isForwardingOutport(inport, outport) {
-    let inportName; let
-      outportName;
-    if (typeof inport === 'string') {
+    let inportName;
+    let outportName;
+    if (typeof inport === "string") {
       inportName = inport;
     } else {
       inportName = inport.name;
     }
-    if (typeof outport === 'string') {
+    if (typeof outport === "string") {
       outportName = outport;
     } else {
       outportName = outport.name;
@@ -444,16 +470,24 @@ export class Component extends EventEmitter {
     if (!inportName || !outportName) {
       return false;
     }
-    if (!this.forwardBrackets[inportName]) { return false; }
-    if (this.forwardBrackets[inportName].indexOf(outportName) !== -1) { return true; }
+    if (!this.forwardBrackets[inportName]) {
+      return false;
+    }
+    if (this.forwardBrackets[inportName].indexOf(outportName) !== -1) {
+      return true;
+    }
     return false;
   }
 
   // Method for checking whether the component sends packets
   // in the same order they were received.
   isOrdered() {
-    if (this.ordered) { return true; }
-    if (this.autoOrdering) { return true; }
+    if (this.ordered) {
+      return true;
+    }
+    if (this.autoOrdering) {
+      return true;
+    }
     return false;
   }
 
@@ -473,10 +507,16 @@ export class Component extends EventEmitter {
       return;
     }
 
-    if ((ip.type === 'openBracket') && (this.autoOrdering === null) && !this.ordered) {
+    if (
+      ip.type === "openBracket" &&
+      this.autoOrdering === null &&
+      !this.ordered
+    ) {
       // Switch component to ordered mode when receiving a stream unless
       // auto-ordering is disabled
-      debugComponent(`${this.nodeId} port '${port.name}' entered auto-ordering mode`);
+      debugComponent(
+        `${this.nodeId} port '${port.name}' entered auto-ordering mode`,
+      );
       this.autoOrdering = true;
     }
 
@@ -488,12 +528,12 @@ export class Component extends EventEmitter {
     if (this.isForwardingInport(port)) {
       // For bracket-forwarding inports we need to initialize a bracket context
       // so that brackets can be sent as part of the output, and closed after.
-      if (ip.type === 'openBracket') {
+      if (ip.type === "openBracket") {
         // For forwarding ports openBrackets don't fire
         return;
       }
 
-      if (ip.type === 'closeBracket') {
+      if (ip.type === "closeBracket") {
         // For forwarding ports closeBrackets don't fire
         // However, we need to handle several different scenarios:
         // A. There are closeBrackets in queue before current packet
@@ -501,15 +541,26 @@ export class Component extends EventEmitter {
         // C. We've queued the results from all in-flight processes and
         //    new closeBracket arrives
         const buf = port.getBuffer(ip.scope, ip.index);
-        const dataPackets = buf.filter((p) => p.type === 'data');
-        if ((this.outputQ.length >= this.load) && (dataPackets.length === 0)) {
-          if (buf[0] !== ip) { return; }
-          if (!port.name) { return; }
+        const dataPackets = buf.filter((p) => p.type === "data");
+        if (this.outputQ.length >= this.load && dataPackets.length === 0) {
+          if (buf[0] !== ip) {
+            return;
+          }
+          if (!port.name) {
+            return;
+          }
           // Remove from buffer
           port.get(ip.scope, ip.index);
-          const bracketCtx = this.getBracketContext('in', port.name, ip.scope, ip.index).pop();
+          const bracketCtx = this.getBracketContext(
+            "in",
+            port.name,
+            ip.scope,
+            ip.index,
+          ).pop();
           bracketCtx.closeIp = ip;
-          debugBrackets(`${this.nodeId} closeBracket-C from '${bracketCtx.source}' to ${bracketCtx.ports}: '${ip.data}'`);
+          debugBrackets(
+            `${this.nodeId} closeBracket-C from '${bracketCtx.source}' to ${bracketCtx.ports}: '${ip.data}'`,
+          );
           result = {
             __resolved: true,
             __bracketClosingAfter: [bracketCtx],
@@ -519,7 +570,9 @@ export class Component extends EventEmitter {
         }
         // Check if buffer contains data IPs. If it does, we want to allow
         // firing
-        if (!dataPackets.length) { return; }
+        if (!dataPackets.length) {
+          return;
+        }
       }
     }
 
@@ -530,7 +583,7 @@ export class Component extends EventEmitter {
     try {
       // Call the processing function
       if (!this.handle) {
-        throw new Error('Processing function not defined');
+        throw new Error("Processing function not defined");
       }
       const res = this.handle(input, output, context);
       // biome-ignore  lint/complexity/useOptionalChain: We need to support both promisified and classic processing functions
@@ -546,14 +599,20 @@ export class Component extends EventEmitter {
       output.sendDone(e);
     }
 
-    if (context.activated) { return; }
+    if (context.activated) {
+      return;
+    }
     // If receiving an IP object didn't cause the component to
     // activate, log that input conditions were not met
     if (port.isAddressable()) {
-      debugComponent(`${this.nodeId} packet on '${port.name}[${ip.index}]' didn't match preconditions: ${ip.type}`);
+      debugComponent(
+        `${this.nodeId} packet on '${port.name}[${ip.index}]' didn't match preconditions: ${ip.type}`,
+      );
       return;
     }
-    debugComponent(`${this.nodeId} packet on '${port.name}' didn't match preconditions: ${ip.type}`);
+    debugComponent(
+      `${this.nodeId} packet on '${port.name}' didn't match preconditions: ${ip.type}`,
+    );
   }
 
   // Get the current bracket forwarding context for an IP object
@@ -565,8 +624,10 @@ export class Component extends EventEmitter {
    */
   getBracketContext(type, port, scope, idx = null) {
     let { name, index } = normalizePortName(port);
-    if (idx != null) { index = `${idx}`; }
-    const portsList = type === 'in' ? this.inPorts : this.outPorts;
+    if (idx != null) {
+      index = `${idx}`;
+    }
+    const portsList = type === "in" ? this.inPorts : this.outPorts;
     if (portsList.ports[name].isAddressable()) {
       name = `${name}[${index}]`;
     } else {
@@ -594,9 +655,11 @@ export class Component extends EventEmitter {
     const res = result;
     const ip = packet;
     const { name, index } = normalizePortName(port);
-    const method = before ? 'unshift' : 'push';
+    const method = before ? "unshift" : "push";
     if (this.outPorts.ports[name].isAddressable()) {
-      const idx = /** @type {number} */ (index ? parseInt(index, 10) : ip.index);
+      const idx = /** @type {number} */ (
+        index ? parseInt(index, 10) : ip.index
+      );
       if (!res[name]) {
         res[name] = {};
       }
@@ -621,14 +684,26 @@ export class Component extends EventEmitter {
     const forwardable = [];
     contexts.forEach((ctx, idx) => {
       // No forwarding to this outport
-      if (!this.isForwardingOutport(inport, name)) { return; }
+      if (!this.isForwardingOutport(inport, name)) {
+        return;
+      }
       // We have already forwarded this context to this outport
-      if (ctx.ports.indexOf(outport) !== -1) { return; }
+      if (ctx.ports.indexOf(outport) !== -1) {
+        return;
+      }
       // See if we have already forwarded the same bracket from another
       // inport
-      const outContext = this.getBracketContext('out', name, ctx.ip.scope, parseInt(index, 10))[idx];
+      const outContext = this.getBracketContext(
+        "out",
+        name,
+        ctx.ip.scope,
+        parseInt(index, 10),
+      )[idx];
       if (outContext) {
-        if ((outContext.ip.data === ctx.ip.data) && (outContext.ports.indexOf(outport) !== -1)) {
+        if (
+          outContext.ip.data === ctx.ip.data &&
+          outContext.ports.indexOf(outport) !== -1
+        ) {
           return;
         }
       }
@@ -641,14 +716,22 @@ export class Component extends EventEmitter {
   /** @private */
   addBracketForwards(result) {
     const res = result;
-    if (res.__bracketClosingBefore != null ? res.__bracketClosingBefore.length : undefined) {
+    if (
+      res.__bracketClosingBefore != null
+        ? res.__bracketClosingBefore.length
+        : undefined
+    ) {
       res.__bracketClosingBefore.forEach((context) => {
-        debugBrackets(`${this.nodeId} closeBracket-A from '${context.source}' to ${context.ports}: '${context.closeIp.data}'`);
-        if (!context.ports.length) { return; }
+        debugBrackets(
+          `${this.nodeId} closeBracket-A from '${context.source}' to ${context.ports}: '${context.closeIp.data}'`,
+        );
+        if (!context.ports.length) {
+          return;
+        }
         context.ports.forEach((port) => {
           const ipClone = context.closeIp.clone();
           this.addToResult(res, port, ipClone, true);
-          this.getBracketContext('out', port, ipClone.scope).pop();
+          this.getBracketContext("out", port, ipClone.scope).pop();
         });
       });
     }
@@ -656,62 +739,103 @@ export class Component extends EventEmitter {
     if (res.__bracketContext) {
       // First see if there are any brackets to forward. We need to reverse
       // the keys so that they get added in correct order
-      Object.keys(res.__bracketContext).reverse().forEach((inport) => {
-        const context = res.__bracketContext[inport];
-        if (!context.length) { return; }
-        Object.keys(res).forEach((outport) => {
-          let datas; let forwardedOpens; let unforwarded;
-          const ips = res[outport];
-          if (outport.indexOf('__') === 0) { return; }
-          if (this.outPorts[outport].isAddressable()) {
-            Object.keys(ips).forEach((idx) => {
-              // Don't register indexes we're only sending brackets to
-              const idxIps = ips[idx];
-              datas = idxIps.filter((ip) => ip.type === 'data');
-              if (!datas.length) { return; }
-              const portIdentifier = `${outport}[${idx}]`;
-              unforwarded = this.getForwardableContexts(inport, portIdentifier, context);
-              if (!unforwarded.length) { return; }
-              forwardedOpens = [];
-              unforwarded.forEach((ctx) => {
-                debugBrackets(`${this.nodeId} openBracket from '${inport}' to '${portIdentifier}': '${ctx.ip.data}'`);
-                const ipClone = ctx.ip.clone();
-                ipClone.index = parseInt(idx, 10);
-                forwardedOpens.push(ipClone);
-                ctx.ports.push(portIdentifier);
-                this.getBracketContext('out', outport, ctx.ip.scope, ipClone.index).push(ctx);
-              });
-              forwardedOpens.reverse();
-              forwardedOpens.forEach((ip) => { this.addToResult(res, outport, ip, true); });
-            });
+      Object.keys(res.__bracketContext)
+        .reverse()
+        .forEach((inport) => {
+          const context = res.__bracketContext[inport];
+          if (!context.length) {
             return;
           }
-          // Don't register ports we're only sending brackets to
-          datas = ips.filter((ip) => ip.type === 'data');
-          if (!datas.length) { return; }
-          unforwarded = this.getForwardableContexts(inport, outport, context);
-          if (!unforwarded.length) { return; }
-          forwardedOpens = [];
-          unforwarded.forEach((ctx) => {
-            debugBrackets(`${this.nodeId} openBracket from '${inport}' to '${outport}': '${ctx.ip.data}'`);
-            forwardedOpens.push(ctx.ip.clone());
-            ctx.ports.push(outport);
-            this.getBracketContext('out', outport, ctx.ip.scope).push(ctx);
+          Object.keys(res).forEach((outport) => {
+            let datas;
+            let forwardedOpens;
+            let unforwarded;
+            const ips = res[outport];
+            if (outport.indexOf("__") === 0) {
+              return;
+            }
+            if (this.outPorts[outport].isAddressable()) {
+              Object.keys(ips).forEach((idx) => {
+                // Don't register indexes we're only sending brackets to
+                const idxIps = ips[idx];
+                datas = idxIps.filter((ip) => ip.type === "data");
+                if (!datas.length) {
+                  return;
+                }
+                const portIdentifier = `${outport}[${idx}]`;
+                unforwarded = this.getForwardableContexts(
+                  inport,
+                  portIdentifier,
+                  context,
+                );
+                if (!unforwarded.length) {
+                  return;
+                }
+                forwardedOpens = [];
+                unforwarded.forEach((ctx) => {
+                  debugBrackets(
+                    `${this.nodeId} openBracket from '${inport}' to '${portIdentifier}': '${ctx.ip.data}'`,
+                  );
+                  const ipClone = ctx.ip.clone();
+                  ipClone.index = parseInt(idx, 10);
+                  forwardedOpens.push(ipClone);
+                  ctx.ports.push(portIdentifier);
+                  this.getBracketContext(
+                    "out",
+                    outport,
+                    ctx.ip.scope,
+                    ipClone.index,
+                  ).push(ctx);
+                });
+                forwardedOpens.reverse();
+                forwardedOpens.forEach((ip) => {
+                  this.addToResult(res, outport, ip, true);
+                });
+              });
+              return;
+            }
+            // Don't register ports we're only sending brackets to
+            datas = ips.filter((ip) => ip.type === "data");
+            if (!datas.length) {
+              return;
+            }
+            unforwarded = this.getForwardableContexts(inport, outport, context);
+            if (!unforwarded.length) {
+              return;
+            }
+            forwardedOpens = [];
+            unforwarded.forEach((ctx) => {
+              debugBrackets(
+                `${this.nodeId} openBracket from '${inport}' to '${outport}': '${ctx.ip.data}'`,
+              );
+              forwardedOpens.push(ctx.ip.clone());
+              ctx.ports.push(outport);
+              this.getBracketContext("out", outport, ctx.ip.scope).push(ctx);
+            });
+            forwardedOpens.reverse();
+            forwardedOpens.forEach((ip) => {
+              this.addToResult(res, outport, ip, true);
+            });
           });
-          forwardedOpens.reverse();
-          forwardedOpens.forEach((ip) => { this.addToResult(res, outport, ip, true); });
         });
-      });
     }
 
-    if (res.__bracketClosingAfter != null ? res.__bracketClosingAfter.length : undefined) {
+    if (
+      res.__bracketClosingAfter != null
+        ? res.__bracketClosingAfter.length
+        : undefined
+    ) {
       res.__bracketClosingAfter.forEach((context) => {
-        debugBrackets(`${this.nodeId} closeBracket-B from '${context.source}' to ${context.ports}: '${context.closeIp.data}'`);
-        if (!context.ports.length) { return; }
+        debugBrackets(
+          `${this.nodeId} closeBracket-B from '${context.source}' to ${context.ports}: '${context.closeIp.data}'`,
+        );
+        if (!context.ports.length) {
+          return;
+        }
         context.ports.forEach((port) => {
           const ipClone = context.closeIp.clone();
           this.addToResult(res, port, ipClone, false);
-          this.getBracketContext('out', port, ipClone.scope).pop();
+          this.getBracketContext("out", port, ipClone.scope).pop();
         });
       });
     }
@@ -726,25 +850,35 @@ export class Component extends EventEmitter {
   /** @private */
   processOutputQueue() {
     while (this.outputQ.length > 0) {
-      if (!this.outputQ[0].__resolved) { break; }
+      if (!this.outputQ[0].__resolved) {
+        break;
+      }
       const result = this.outputQ.shift();
       this.addBracketForwards(result);
       Object.keys(result).forEach((port) => {
         let portIdentifier;
         const ips = result[port];
-        if (port.indexOf('__') === 0) { return; }
+        if (port.indexOf("__") === 0) {
+          return;
+        }
         if (this.outPorts.ports[port].isAddressable()) {
           Object.keys(ips).forEach((index) => {
             const idxIps = ips[index];
             const idx = parseInt(index, 10);
-            if (!this.outPorts.ports[port].isAttached(idx)) { return; }
+            if (!this.outPorts.ports[port].isAttached(idx)) {
+              return;
+            }
             idxIps.forEach((packet) => {
               const ip = packet;
               portIdentifier = `${port}[${ip.index}]`;
-              if (ip.type === 'openBracket') {
-                debugSend(`${this.nodeId} sending ${portIdentifier} < '${ip.data}'`);
-              } else if (ip.type === 'closeBracket') {
-                debugSend(`${this.nodeId} sending ${portIdentifier} > '${ip.data}'`);
+              if (ip.type === "openBracket") {
+                debugSend(
+                  `${this.nodeId} sending ${portIdentifier} < '${ip.data}'`,
+                );
+              } else if (ip.type === "closeBracket") {
+                debugSend(
+                  `${this.nodeId} sending ${portIdentifier} > '${ip.data}'`,
+                );
               } else {
                 debugSend(`${this.nodeId} sending ${portIdentifier} DATA`);
               }
@@ -756,14 +890,20 @@ export class Component extends EventEmitter {
           });
           return;
         }
-        if (!this.outPorts.ports[port].isAttached()) { return; }
+        if (!this.outPorts.ports[port].isAttached()) {
+          return;
+        }
         ips.forEach((packet) => {
           const ip = packet;
           portIdentifier = port;
-          if (ip.type === 'openBracket') {
-            debugSend(`${this.nodeId} sending ${portIdentifier} < '${ip.data}'`);
-          } else if (ip.type === 'closeBracket') {
-            debugSend(`${this.nodeId} sending ${portIdentifier} > '${ip.data}'`);
+          if (ip.type === "openBracket") {
+            debugSend(
+              `${this.nodeId} sending ${portIdentifier} < '${ip.data}'`,
+            );
+          } else if (ip.type === "closeBracket") {
+            debugSend(
+              `${this.nodeId} sending ${portIdentifier} > '${ip.data}'`,
+            );
           } else {
             debugSend(`${this.nodeId} sending ${portIdentifier} DATA`);
           }
@@ -785,11 +925,13 @@ export class Component extends EventEmitter {
    * @param {Object} context.result
    */
   activate(context) {
-    if (context.activated) { return; } // prevent double activation
+    if (context.activated) {
+      return;
+    } // prevent double activation
     context.activated = true;
     context.deactivated = false;
     this.load += 1;
-    this.emit('activate', this.load);
+    this.emit("activate", this.load);
     if (this.ordered || this.autoOrdering) {
       this.outputQ.push(context.result);
     }
@@ -803,15 +945,17 @@ export class Component extends EventEmitter {
    * @param {boolean} context.deactivated
    */
   deactivate(context) {
-    if (context.deactivated) { return; } // prevent double deactivation
+    if (context.deactivated) {
+      return;
+    } // prevent double deactivation
     context.deactivated = true;
     context.activated = false;
     if (this.isOrdered()) {
       this.processOutputQueue();
     }
     this.load -= 1;
-    this.emit('deactivate', this.load);
+    this.emit("deactivate", this.load);
   }
 }
-Component.description = '';
+Component.description = "";
 Component.icon = null;

@@ -4,8 +4,8 @@
 /* eslint-disable
     import/prefer-default-export,
 */
-import getParams from 'get-function-params';
-import { Component } from './Component.js';
+import getParams from "get-function-params";
+import { Component } from "./Component.js";
 
 /**
  * @typedef FuncParam
@@ -84,7 +84,9 @@ export function asComponent(func, options) {
   let hasCallback = false;
   /** @type {Array<FuncParam>} */
   const params = getParams(func).filter((p) => {
-    if (p.param !== 'callback') { return true; }
+    if (p.param !== "callback") {
+      return true;
+    }
     hasCallback = true;
     return false;
   });
@@ -93,32 +95,36 @@ export function asComponent(func, options) {
   params.forEach((p) => {
     /** @type {PortOptions} */
     const portOptions = { required: true };
-    if (typeof p.default !== 'undefined') {
+    if (typeof p.default !== "undefined") {
       portOptions.default = p.default;
       portOptions.required = false;
     }
     c.inPorts.add(p.param, portOptions);
-    c.forwardBrackets[p.param] = ['out', 'error'];
+    c.forwardBrackets[p.param] = ["out", "error"];
   });
   if (!params.length) {
-    c.inPorts.add('in', {
-      datatype: 'bang',
+    c.inPorts.add("in", {
+      datatype: "bang",
     });
   }
 
-  c.outPorts.add('out');
-  c.outPorts.add('error');
+  c.outPorts.add("out");
+  c.outPorts.add("error");
   c.process((input, output) => {
     let values;
     if (params.length) {
       for (let i = 0; i < params.length; i += 1) {
         const p = params[i];
-        if (!input.hasData(p.param)) { return; }
+        if (!input.hasData(p.param)) {
+          return;
+        }
       }
       values = params.map((p) => input.getData(p.param));
     } else {
-      if (!input.hasData('in')) { return; }
-      input.getData('in');
+      if (!input.hasData("in")) {
+        return;
+      }
+      input.getData("in");
       values = [];
     }
 
@@ -141,7 +147,7 @@ export function asComponent(func, options) {
     }
 
     const res = func(...values);
-    if (res && (typeof res === 'object') && (typeof res.then === 'function')) {
+    if (res && typeof res === "object" && typeof res.then === "function") {
       // Result is a Promise, resolve and handle
       const resPromise = /** @type {Promise<any>} */ (res);
       resPromise.then(

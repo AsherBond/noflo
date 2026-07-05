@@ -6,11 +6,11 @@
     no-param-reassign,
     import/prefer-default-export,
 */
-import { Graph } from 'fbp-graph';
-import { ComponentLoader } from './ComponentLoader.js';
-import { Network } from './Network.js';
-import IP from './IP.js';
-import * as internalSocket from './InternalSocket.js';
+import { Graph } from "fbp-graph";
+import { ComponentLoader } from "./ComponentLoader.js";
+import * as internalSocket from "./InternalSocket.js";
+import IP from "./IP.js";
+import { Network } from "./Network.js";
 
 // ## asCallback embedding API
 //
@@ -62,8 +62,10 @@ import * as internalSocket from './InternalSocket.js';
  * @returns {AsCallbackOptions}
  */
 function normalizeOptions(options, component) {
-  if (!options) { options = {}; }
-  if (!options.name && typeof component === 'string') {
+  if (!options) {
+    options = {};
+  }
+  if (!options.name && typeof component === "string") {
     options.name = component;
   }
   if (options.loader) {
@@ -96,7 +98,7 @@ function normalizeOptions(options, component) {
  */
 function prepareNetwork(component, options) {
   // If we were given a graph instance, then just create a network
-  if (typeof component === 'object') {
+  if (typeof component === "object") {
     // This is a graph object
     const network = new Network(component, {
       ...options,
@@ -107,33 +109,32 @@ function prepareNetwork(component, options) {
   }
 
   if (!options.loader) {
-    return Promise.reject(new Error('No component loader provided'));
+    return Promise.reject(new Error("No component loader provided"));
   }
 
   // Start by loading the component
-  return options.loader.load(component, {})
-    .then((instance) => {
-      // Prepare a graph wrapping the component
-      const graph = new Graph(options.name);
-      const nodeName = options.name || 'AsCallback';
-      graph.addNode(nodeName, component);
-      // Expose ports
-      const inPorts = instance.inPorts.ports;
-      const outPorts = instance.outPorts.ports;
-      Object.keys(inPorts).forEach((port) => {
-        graph.addInport(port, nodeName, port);
-      });
-      Object.keys(outPorts).forEach((port) => {
-        graph.addOutport(port, nodeName, port);
-      });
-      // Prepare network
-      const network = new Network(graph, {
-        ...options,
-        componentLoader: options.loader,
-      });
-      // Wire the network up and start execution
-      return network.connect();
+  return options.loader.load(component, {}).then((instance) => {
+    // Prepare a graph wrapping the component
+    const graph = new Graph(options.name);
+    const nodeName = options.name || "AsCallback";
+    graph.addNode(nodeName, component);
+    // Expose ports
+    const inPorts = instance.inPorts.ports;
+    const outPorts = instance.outPorts.ports;
+    Object.keys(inPorts).forEach((port) => {
+      graph.addInport(port, nodeName, port);
     });
+    Object.keys(outPorts).forEach((port) => {
+      graph.addOutport(port, nodeName, port);
+    });
+    // Prepare network
+    const network = new Network(graph, {
+      ...options,
+      componentLoader: options.loader,
+    });
+    // Wire the network up and start execution
+    return network.connect();
+  });
 }
 
 // ### Network execution
@@ -171,16 +172,21 @@ function runNetwork(network, inputs) {
       if (!process.component) {
         return;
       }
-      outSockets[outport] = internalSocket.createSocket({}, {
-        debug: false,
-      });
+      outSockets[outport] = internalSocket.createSocket(
+        {},
+        {
+          debug: false,
+        },
+      );
       network.subscribeSocket(outSockets[outport]);
-      process.component.outPorts.ports[portDef.port].attach(outSockets[outport]);
+      process.component.outPorts.ports[portDef.port].attach(
+        outSockets[outport],
+      );
       outSockets[outport].from = {
         process,
         port: portDef.port,
       };
-      outSockets[outport].on('ip', (ip) => {
+      outSockets[outport].on("ip", (ip) => {
         /** @type Object<string, IP> */
         const res = {};
         res[outport] = ip;
@@ -202,9 +208,9 @@ function runNetwork(network, inputs) {
     /** @type {ErrorListener} */
     const onError = (err) => {
       reject(err.error);
-      network.removeListener('end', onEnd);
+      network.removeListener("end", onEnd);
     };
-    network.once('process-error', onError);
+    network.once("process-error", onError);
     // Subscribe network finish
     onEnd = () => {
       // Clear listeners
@@ -215,59 +221,71 @@ function runNetwork(network, inputs) {
       outSockets = {};
       inSockets = {};
       resolve(received);
-      network.removeListener('process-error', onError);
+      network.removeListener("process-error", onError);
     };
-    network.once('end', onEnd);
+    network.once("end", onEnd);
     // Start network
-    network.start()
-      .then(() => {
-        // Send inputs
-        for (let i = 0; i < inputs.length; i += 1) {
-          const inputMap = inputs[i];
-          const keys = Object.keys(inputMap);
-          for (let j = 0; j < keys.length; j += 1) {
-            const port = keys[j];
-            const value = inputMap[port];
-            if (!inSockets[port]) {
-              const portDef = network.graph.inports[port];
-              if (!portDef) {
-                reject(new Error(`Port ${port} not available in the graph`));
-                return;
-              }
-              const process = network.getNode(portDef.process);
-              if (!process) {
-                reject(new Error(`Process ${portDef.process} for port ${port} not available in the graph`));
-                return;
-              }
-              if (!process.component) {
-                reject(new Error(`Process ${portDef.process} for port ${port} not available in the graph`));
-                return;
-              }
-              inSockets[port] = internalSocket.createSocket({}, {
-                debug: false,
-              });
-              network.subscribeSocket(inSockets[port]);
-              inSockets[port].to = {
-                process,
-                port,
-              };
-              process.component.inPorts.ports[portDef.port].attach(inSockets[port]);
-            }
-            try {
-              if (IP.isIP(value)) {
-                inSockets[port].post(value);
-              } else {
-                inSockets[port].post(new IP('data', value));
-              }
-            } catch (e) {
-              reject(e);
-              network.removeListener('process-error', onError);
-              network.removeListener('end', onEnd);
+    network.start().then(() => {
+      // Send inputs
+      for (let i = 0; i < inputs.length; i += 1) {
+        const inputMap = inputs[i];
+        const keys = Object.keys(inputMap);
+        for (let j = 0; j < keys.length; j += 1) {
+          const port = keys[j];
+          const value = inputMap[port];
+          if (!inSockets[port]) {
+            const portDef = network.graph.inports[port];
+            if (!portDef) {
+              reject(new Error(`Port ${port} not available in the graph`));
               return;
             }
+            const process = network.getNode(portDef.process);
+            if (!process) {
+              reject(
+                new Error(
+                  `Process ${portDef.process} for port ${port} not available in the graph`,
+                ),
+              );
+              return;
+            }
+            if (!process.component) {
+              reject(
+                new Error(
+                  `Process ${portDef.process} for port ${port} not available in the graph`,
+                ),
+              );
+              return;
+            }
+            inSockets[port] = internalSocket.createSocket(
+              {},
+              {
+                debug: false,
+              },
+            );
+            network.subscribeSocket(inSockets[port]);
+            inSockets[port].to = {
+              process,
+              port,
+            };
+            process.component.inPorts.ports[portDef.port].attach(
+              inSockets[port],
+            );
+          }
+          try {
+            if (IP.isIP(value)) {
+              inSockets[port].post(value);
+            } else {
+              inSockets[port].post(new IP("data", value));
+            }
+          } catch (e) {
+            reject(e);
+            network.removeListener("process-error", onError);
+            network.removeListener("end", onEnd);
+            return;
           }
         }
-      }, reject);
+      }
+    }, reject);
   });
 }
 
@@ -278,24 +296,32 @@ function runNetwork(network, inputs) {
  */
 function getType(inputs, network) {
   // Scalar values are always simple inputs
-  if (typeof inputs !== 'object' || !inputs) { return 'simple'; }
+  if (typeof inputs !== "object" || !inputs) {
+    return "simple";
+  }
 
   if (Array.isArray(inputs)) {
-    const maps = inputs.filter((entry) => getType(entry, network) === 'map');
+    const maps = inputs.filter((entry) => getType(entry, network) === "map");
     // If each member if the array is an input map, this is a sequence
-    if (maps.length === inputs.length) { return 'sequence'; }
+    if (maps.length === inputs.length) {
+      return "sequence";
+    }
     // Otherwise arrays must be simple inputs
-    return 'simple';
+    return "simple";
   }
 
   // Empty objects can't be maps
   const keys = Object.keys(inputs);
-  if (!keys.length) { return 'simple'; }
+  if (!keys.length) {
+    return "simple";
+  }
   for (let i = 0; i < keys.length; i += 1) {
     const key = keys[i];
-    if (!network.graph.inports[key]) { return 'simple'; }
+    if (!network.graph.inports[key]) {
+      return "simple";
+    }
   }
-  return 'map';
+  return "map";
 }
 
 /**
@@ -306,9 +332,13 @@ function getType(inputs, network) {
  */
 function prepareInputMap(inputs, inputType, network) {
   // Sequence we can use as-is
-  if (inputType === 'sequence') { return inputs; }
+  if (inputType === "sequence") {
+    return inputs;
+  }
   // We can turn a map to a sequence by wrapping it in an array
-  if (inputType === 'map') { return [inputs]; }
+  if (inputType === "map") {
+    return [inputs];
+  }
   // Simple inputs need to be converted to a sequence
   let inPort = Object.keys(network.graph.inports)[0];
   if (!inPort) {
@@ -316,7 +346,7 @@ function prepareInputMap(inputs, inputType, network) {
   }
   // If we have a port named "IN", send to that
   if (network.graph.inports.in) {
-    inPort = 'in';
+    inPort = "in";
   }
   /** @type {InputMap} */
   const map = {};
@@ -330,22 +360,24 @@ function prepareInputMap(inputs, inputType, network) {
  * @returns {Array<any>}
  */
 function normalizeOutput(values, options) {
-  if (options.raw) { return values; }
+  if (options.raw) {
+    return values;
+  }
   /** @type {Array<any>} */
   const result = [];
   /** @type {Array<any>|null} */
   let previous = null;
   let current = result;
   values.forEach((packet) => {
-    if (packet.type === 'openBracket') {
+    if (packet.type === "openBracket") {
       previous = current;
       current = [];
       previous.push(current);
     }
-    if (packet.type === 'data') {
+    if (packet.type === "data") {
       current.push(packet.data);
     }
-    if (packet.type === 'closeBracket') {
+    if (packet.type === "closeBracket") {
       current = /** @type {Array<any>} */ (previous);
     }
   });
@@ -361,25 +393,29 @@ function normalizeOutput(values, options) {
  */
 function sendOutputMap(outputs, resultType, options) {
   // First check if the output sequence contains errors
-  const errors = outputs.filter((map) => map.error != null).map((map) => map.error);
+  const errors = outputs
+    .filter((map) => map.error != null)
+    .map((map) => map.error);
   if (errors.length) {
     return Promise.reject(normalizeOutput(errors, options));
   }
 
-  if (resultType === 'sequence') {
-    return Promise.resolve(outputs.map((map) => {
-      /** @type {Object<string, any|IP>} */
-      const res = {};
-      Object.keys(map).forEach((key) => {
-        const val = map[key];
-        if (options.raw) {
-          res[key] = val;
-          return;
-        }
-        res[key] = normalizeOutput([val], options);
-      });
-      return res;
-    }));
+  if (resultType === "sequence") {
+    return Promise.resolve(
+      outputs.map((map) => {
+        /** @type {Object<string, any|IP>} */
+        const res = {};
+        Object.keys(map).forEach((key) => {
+          const val = map[key];
+          if (options.raw) {
+            res[key] = val;
+            return;
+          }
+          res[key] = normalizeOutput([val], options);
+        });
+        return res;
+      }),
+    );
   }
 
   // Flatten the sequence
@@ -396,14 +432,18 @@ function sendOutputMap(outputs, resultType, options) {
   });
 
   const outputKeys = Object.keys(mappedOutputs);
-  const withValue = outputKeys.filter((outport) => mappedOutputs[outport].length > 0);
+  const withValue = outputKeys.filter(
+    (outport) => mappedOutputs[outport].length > 0,
+  );
   if (withValue.length === 0) {
     // No output
     return Promise.resolve(null);
   }
-  if ((withValue.length === 1) && (resultType === 'simple')) {
+  if (withValue.length === 1 && resultType === "simple") {
     // Single outport
-    return Promise.resolve(normalizeOutput(mappedOutputs[withValue[0]], options));
+    return Promise.resolve(
+      normalizeOutput(mappedOutputs[withValue[0]], options),
+    );
   }
   /** @type {Object<string, any|IP>} */
   const result = {};
@@ -453,18 +493,19 @@ function sendOutputMap(outputs, resultType, options) {
  */
 export function asPromise(component, options) {
   if (!component) {
-    throw new Error('No component or graph provided');
+    throw new Error("No component or graph provided");
   }
   options = normalizeOptions(options, component);
-  return (inputs) => prepareNetwork(component, options)
-    .then((network) => {
+  return (inputs) =>
+    prepareNetwork(component, options).then((network) => {
       if (options.networkCallback) {
         options.networkCallback(network);
       }
       const resultType = getType(inputs, network);
       const inputMap = prepareInputMap(inputs, resultType, network);
-      return runNetwork(network, inputMap)
-        .then((outputMap) => sendOutputMap(outputMap, resultType, options));
+      return runNetwork(network, inputMap).then((outputMap) =>
+        sendOutputMap(outputMap, resultType, options),
+      );
     });
 }
 
@@ -476,9 +517,8 @@ export function asPromise(component, options) {
 export function asCallback(component, options) {
   const promised = asPromise(component, options);
   return (inputs, callback) => {
-    promised(inputs)
-      .then((output) => {
-        callback(null, output);
-      }, callback);
+    promised(inputs).then((output) => {
+      callback(null, output);
+    }, callback);
   };
 }

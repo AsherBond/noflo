@@ -2,8 +2,8 @@
 //     (c) 2013-2018 Flowhub UG
 //     (c) 2011-2012 Henri Bergius, Nemein
 //     NoFlo may be freely distributed under the MIT license
-import { BaseNetwork } from './BaseNetwork.js';
-import { deprecated } from './Platform.js';
+import { BaseNetwork } from "./BaseNetwork.js";
+import { deprecated } from "./Platform.js";
 
 /* eslint-disable
     import/prefer-default-export,
@@ -27,7 +27,9 @@ export class LegacyNetwork extends BaseNetwork {
   // accordingly, including removing connections, adding new nodes,
   // and sending new IIPs.
   constructor(graph, options = {}) {
-    deprecated('subscribeGraph: true is deprecated. Live-edit network graphs via the network methods instead');
+    deprecated(
+      "subscribeGraph: true is deprecated. Live-edit network graphs via the network methods instead",
+    );
     super(graph, options);
   }
 
@@ -41,13 +43,14 @@ export class LegacyNetwork extends BaseNetwork {
    * @returns {Promise<this>}
    */
   connect(callback) {
-    const promise = super.connect()
-      .then(() => {
-        this.subscribeGraph();
-        return this;
-      });
+    const promise = super.connect().then(() => {
+      this.subscribeGraph();
+      return this;
+    });
     if (callback) {
-      deprecated('Providing a callback to Network.connect is deprecated, use Promises');
+      deprecated(
+        "Providing a callback to Network.connect is deprecated, use Promises",
+      );
       promise.then(() => {
         callback(null);
       }, callback);
@@ -72,8 +75,10 @@ export class LegacyNetwork extends BaseNetwork {
     };
     const processOps = (err) => {
       if (err) {
-        if (this.listeners('process-error').length === 0) { throw err; }
-        this.bufferedEmit('process-error', err);
+        if (this.listeners("process-error").length === 0) {
+          throw err;
+        }
+        this.bufferedEmit("process-error", err);
       }
 
       if (!graphOps.length) {
@@ -84,7 +89,7 @@ export class LegacyNetwork extends BaseNetwork {
       const op = graphOps.shift();
       const cb = processOps;
       switch (op.op) {
-        case 'renameNode':
+        case "renameNode":
           this.renameNode(op.details.from, op.details.to, cb);
           break;
         default:
@@ -92,36 +97,50 @@ export class LegacyNetwork extends BaseNetwork {
       }
     };
 
-    this.graph.on('addNode', (node) => {
-      registerOp('addNode', node);
-      if (!processing) { processOps(); }
+    this.graph.on("addNode", (node) => {
+      registerOp("addNode", node);
+      if (!processing) {
+        processOps();
+      }
     });
-    this.graph.on('removeNode', (node) => {
-      registerOp('removeNode', node);
-      if (!processing) { processOps(); }
+    this.graph.on("removeNode", (node) => {
+      registerOp("removeNode", node);
+      if (!processing) {
+        processOps();
+      }
     });
-    this.graph.on('renameNode', (oldId, newId) => {
-      registerOp('renameNode', {
+    this.graph.on("renameNode", (oldId, newId) => {
+      registerOp("renameNode", {
         from: oldId,
         to: newId,
       });
-      if (!processing) { processOps(); }
+      if (!processing) {
+        processOps();
+      }
     });
-    this.graph.on('addEdge', (edge) => {
-      registerOp('addEdge', edge);
-      if (!processing) { processOps(); }
+    this.graph.on("addEdge", (edge) => {
+      registerOp("addEdge", edge);
+      if (!processing) {
+        processOps();
+      }
     });
-    this.graph.on('removeEdge', (edge) => {
-      registerOp('removeEdge', edge);
-      if (!processing) { processOps(); }
+    this.graph.on("removeEdge", (edge) => {
+      registerOp("removeEdge", edge);
+      if (!processing) {
+        processOps();
+      }
     });
-    this.graph.on('addInitial', (iip) => {
-      registerOp('addInitial', iip);
-      if (!processing) { processOps(); }
+    this.graph.on("addInitial", (iip) => {
+      registerOp("addInitial", iip);
+      if (!processing) {
+        processOps();
+      }
     });
-    return this.graph.on('removeInitial', (iip) => {
-      registerOp('removeInitial', iip);
-      if (!processing) { processOps(); }
+    return this.graph.on("removeInitial", (iip) => {
+      registerOp("removeInitial", iip);
+      if (!processing) {
+        processOps();
+      }
     });
   }
 }

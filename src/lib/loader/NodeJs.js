@@ -4,12 +4,13 @@
     no-underscore-dangle,
     prefer-destructuring,
 */
-import * as path from 'node:path';
-import * as fs from 'node:fs';
-import * as manifest from 'fbp-manifest';
-import * as fbpGraph from 'fbp-graph';
-import { promisify } from 'util';
-import * as utils from '../Utils.js';
+
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as fbpGraph from "fbp-graph";
+import * as manifest from "fbp-manifest";
+import { promisify } from "util";
+import * as utils from "../Utils.js";
 
 const writeFile = promisify(fs.writeFile);
 const readFile = promisify(fs.readFile);
@@ -17,7 +18,7 @@ const readFile = promisify(fs.readFile);
 // Type loading CoffeeScript compiler
 let CoffeeScript;
 // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
-import('coffeescript')
+import("coffeescript")
   .then((compiler) => {
     CoffeeScript = compiler;
   })
@@ -28,11 +29,11 @@ import('coffeescript')
 // Try loading TypeScript compiler
 let typescript;
 // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
-import('typescript')
+import("typescript")
   .then((compiler) => {
     // @ts-expect-error
     typescript = compiler.default;
-    })
+  })
   .catch((_e) => {
     // If there is no TypeScript compiler installed, we simply don't support compiling
   });
@@ -57,9 +58,13 @@ import('typescript')
 function transpileSource(packageId, name, source, language) {
   let src;
   switch (language) {
-    case 'coffeescript': {
+    case "coffeescript": {
       if (!CoffeeScript) {
-        return Promise.reject(new Error(`Unsupported component source language ${language} for ${packageId}/${name}: no CoffeeScript compiler installed`));
+        return Promise.reject(
+          new Error(
+            `Unsupported component source language ${language} for ${packageId}/${name}: no CoffeeScript compiler installed`,
+          ),
+        );
       }
       try {
         src = CoffeeScript.compile(source, {
@@ -70,9 +75,13 @@ function transpileSource(packageId, name, source, language) {
       }
       break;
     }
-    case 'typescript': {
+    case "typescript": {
       if (!typescript) {
-        return Promise.reject(new Error(`Unsupported component source language ${language} for ${packageId}/${name}: no TypeScript compiler installed`));
+        return Promise.reject(
+          new Error(
+            `Unsupported component source language ${language} for ${packageId}/${name}: no TypeScript compiler installed`,
+          ),
+        );
       }
       try {
         src = typescript.transpile(source, {
@@ -84,15 +93,19 @@ function transpileSource(packageId, name, source, language) {
       }
       break;
     }
-    case 'es6':
-    case 'es2015':
-    case 'js':
-    case 'javascript': {
+    case "es6":
+    case "es2015":
+    case "js":
+    case "javascript": {
       src = source;
       break;
     }
     default: {
-      return Promise.reject(new Error(`Unsupported component source language ${language} for ${packageId}/${name}`));
+      return Promise.reject(
+        new Error(
+          `Unsupported component source language ${language} for ${packageId}/${name}`,
+        ),
+      );
     }
   }
   return Promise.resolve(src);
@@ -106,27 +119,36 @@ function transpileSource(packageId, name, source, language) {
  * @returns {Promise<Object|Function>}
  */
 function evaluateModule(baseDir, packageId, name, source) {
-  return import('node:module')
-    .then(({ Module }) => {
-      // Use the Node.js module API to evaluate in the correct directory context
-      let extension = '.js';
-      if (source.indexOf('require(') !== -1) {
-        // CommonJS
-        extension = '.cjs';
-      }
-      const modulePath = path.resolve(baseDir, `./components/${name}${extension}`);
-      const moduleImpl = new Module(modulePath);
-      // @ts-expect-error
-      moduleImpl.paths = Module._nodeModulePaths(path.dirname(modulePath));
-      moduleImpl.filename = modulePath;
-      // @ts-expect-error
-      moduleImpl._compile(source, modulePath);
-      const implementation = moduleImpl.exports;
-      if ((typeof implementation !== 'function') && (typeof implementation.getComponent !== 'function')) {
-        return Promise.reject(new Error(`Provided source for ${packageId}/${name} failed to create a runnable component`));
-      }
-      return Promise.resolve(implementation);
-    });
+  return import("node:module").then(({ Module }) => {
+    // Use the Node.js module API to evaluate in the correct directory context
+    let extension = ".js";
+    if (source.indexOf("require(") !== -1) {
+      // CommonJS
+      extension = ".cjs";
+    }
+    const modulePath = path.resolve(
+      baseDir,
+      `./components/${name}${extension}`,
+    );
+    const moduleImpl = new Module(modulePath);
+    // @ts-expect-error
+    moduleImpl.paths = Module._nodeModulePaths(path.dirname(modulePath));
+    moduleImpl.filename = modulePath;
+    // @ts-expect-error
+    moduleImpl._compile(source, modulePath);
+    const implementation = moduleImpl.exports;
+    if (
+      typeof implementation !== "function" &&
+      typeof implementation.getComponent !== "function"
+    ) {
+      return Promise.reject(
+        new Error(
+          `Provided source for ${packageId}/${name} failed to create a runnable component`,
+        ),
+      );
+    }
+    return Promise.resolve(implementation);
+  });
 }
 
 /**
@@ -154,7 +176,7 @@ function registerSources(loader, packageId, name, source, language) {
  * @returns {void}
  */
 function registerSpecs(loader, packageId, name, specs) {
-  if (!specs || specs.indexOf('.yaml') === -1) {
+  if (!specs || specs.indexOf(".yaml") === -1) {
     // We support only fbp-spec specs
     return;
   }
@@ -171,7 +193,13 @@ function registerSpecs(loader, packageId, name, specs) {
  * @param {string} language
  * @returns {Promise<void>}
  */
-function transpileAndRegisterForModule(loader, module, component, source, language) {
+function transpileAndRegisterForModule(
+  loader,
+  module,
+  component,
+  source,
+  language,
+) {
   return transpileSource(module.name, component.name, source, language)
     .then((src) => {
       const moduleBase = path.resolve(loader.baseDir, module.base);
@@ -179,15 +207,20 @@ function transpileAndRegisterForModule(loader, module, component, source, langua
     })
     .then((implementation) => {
       registerSources(loader, module.name, component.name, source, language);
-      registerSpecs(loader, module.name, component.name, component.tests || '');
+      registerSpecs(loader, module.name, component.name, component.tests || "");
       return new Promise((resolve, reject) => {
-        loader.registerComponent(module.name, component.name, implementation, (err) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve();
-        });
+        loader.registerComponent(
+          module.name,
+          component.name,
+          implementation,
+          (err) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve();
+          },
+        );
       });
     });
 }
@@ -202,17 +235,22 @@ function transpileAndRegisterForModule(loader, module, component, source, langua
  * @returns {void}
  */
 export function setSource(loader, packageId, name, source, language, callback) {
-  transpileAndRegisterForModule(loader, {
-    name: packageId,
-    base: '',
-    components: [],
-    runtime: 'noflo',
-  }, {
-    name,
-  }, source, language)
-    .then(() => {
-      callback(null);
-    }, callback);
+  transpileAndRegisterForModule(
+    loader,
+    {
+      name: packageId,
+      base: "",
+      components: [],
+      runtime: "noflo",
+    },
+    {
+      name,
+    },
+    source,
+    language,
+  ).then(() => {
+    callback(null);
+  }, callback);
 }
 
 /**
@@ -240,7 +278,7 @@ export function getSource(loader, name, callback) {
     const keys = Object.keys(loader.components);
     for (let i = 0; i < keys.length; i += 1) {
       const key = keys[i];
-      if (key.split('/')[1] === name) {
+      if (key.split("/")[1] === name) {
         component = loader.components[key];
         componentName = key;
         break;
@@ -252,10 +290,10 @@ export function getSource(loader, name, callback) {
     }
   }
 
-  const nameParts = componentName.split('/');
+  const nameParts = componentName.split("/");
   if (nameParts.length === 1) {
     nameParts[1] = nameParts[0];
-    nameParts[0] = '';
+    nameParts[0] = "";
   }
 
   /**
@@ -276,49 +314,55 @@ export function getSource(loader, name, callback) {
       return;
     }
     const specPath = loader.specsForComponents[componentName];
-    fs.readFile(path.resolve(loader.baseDir, specPath), 'utf-8', (fsErr, specs) => {
-      if (fsErr) {
-        // Ignore spec reading errors
-        callback(err, src);
-        return;
-      }
-      callback(err, {
-        ...src,
-        tests: specs,
-      });
-    });
+    fs.readFile(
+      path.resolve(loader.baseDir, specPath),
+      "utf-8",
+      (fsErr, specs) => {
+        if (fsErr) {
+          // Ignore spec reading errors
+          callback(err, src);
+          return;
+        }
+        callback(err, {
+          ...src,
+          tests: specs,
+        });
+      },
+    );
   };
 
   if (loader.isGraph(component)) {
-    if (typeof component === 'object') {
+    if (typeof component === "object") {
       const comp = /** @type import("fbp-graph").Graph */ (component);
-      if (typeof comp.toJSON === 'function') {
+      if (typeof comp.toJSON === "function") {
         finalize(null, {
           name: nameParts[1],
           library: nameParts[0],
           code: JSON.stringify(comp.toJSON()),
-          language: 'json',
+          language: "json",
         });
         return;
       }
-      finalize(new Error(`Can't provide source for ${componentName}. Not a file`));
+      finalize(
+        new Error(`Can't provide source for ${componentName}. Not a file`),
+      );
       return;
     }
-    if (typeof component === 'string') {
+    if (typeof component === "string") {
       fbpGraph.graph.loadFile(component, (err, graph) => {
         if (err) {
           finalize(err);
           return;
         }
         if (!graph) {
-          finalize(new Error('Unable to load graph'));
+          finalize(new Error("Unable to load graph"));
           return;
         }
         finalize(null, {
           name: nameParts[1],
           library: nameParts[0],
           code: JSON.stringify(graph.toJSON()),
-          language: 'json',
+          language: "json",
         });
       });
       return;
@@ -335,9 +379,9 @@ export function getSource(loader, name, callback) {
     return;
   }
 
-  if (typeof component === 'string') {
+  if (typeof component === "string") {
     const componentFile = component;
-    fs.readFile(componentFile, 'utf-8', (err, code) => {
+    fs.readFile(componentFile, "utf-8", (err, code) => {
       if (err) {
         finalize(err);
         return;
@@ -358,12 +402,12 @@ export function getSource(loader, name, callback) {
  * @returns {Array<string>}
  */
 export function getLanguages() {
-  const languages = ['javascript', 'es2015'];
+  const languages = ["javascript", "es2015"];
   if (CoffeeScript) {
-    languages.push('coffeescript');
+    languages.push("coffeescript");
   }
   if (typescript) {
-    languages.push('typescript');
+    languages.push("typescript");
   }
   return languages;
 }
@@ -374,22 +418,30 @@ export function getLanguages() {
  * @param {ErrorableCallback} callback
  */
 function registerCustomLoaders(loader, componentLoaders, callback) {
-  componentLoaders.reduce((chain, componentLoader) => chain
-    .then(() => import(componentLoader))
-    .then((customLoader) => new Promise((resolve, reject) => {
-      let loaderFunc = customLoader;
-      if (typeof customLoader === 'object' && customLoader.default) {
-        // CommonJS loader
-        loaderFunc = customLoader.default;
-      }
-      loader.registerLoader(loaderFunc, (err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve();
-      });
-    })), Promise.resolve())
+  componentLoaders
+    .reduce(
+      (chain, componentLoader) =>
+        chain
+          .then(() => import(componentLoader))
+          .then(
+            (customLoader) =>
+              new Promise((resolve, reject) => {
+                let loaderFunc = customLoader;
+                if (typeof customLoader === "object" && customLoader.default) {
+                  // CommonJS loader
+                  loaderFunc = customLoader.default;
+                }
+                loader.registerLoader(loaderFunc, (err) => {
+                  if (err) {
+                    reject(err);
+                    return;
+                  }
+                  resolve();
+                });
+              }),
+          ),
+      Promise.resolve(),
+    )
     .then(() => {
       callback(null);
     }, callback);
@@ -401,50 +453,62 @@ function registerCustomLoaders(loader, componentLoaders, callback) {
  * @param {ErrorableCallback} callback
  */
 function registerModules(loader, modules, callback) {
-  const compatible = modules.filter((m) => ['noflo', 'noflo-nodejs'].includes(m.runtime));
+  const compatible = modules.filter((m) =>
+    ["noflo", "noflo-nodejs"].includes(m.runtime),
+  );
   /** @type {string[]} */
   const componentLoaders = [];
-  Promise.all(compatible.map((m) => {
-    if (m.icon) {
-      loader.setLibraryIcon(m.name, m.icon);
-    }
-
-    if (m.noflo?.loader) {
-      const loaderPath = path.resolve(loader.baseDir, m.base, m.noflo.loader);
-      componentLoaders.push(loaderPath);
-    }
-
-    return Promise.all(m.components.map((c) => new Promise((resolve, reject) => {
-      const language = utils.guessLanguageFromFilename(c.path);
-      if (language === 'typescript' || language === 'coffeescript') {
-        // We can't require a module that requires transpilation, go the setSource route
-        readFile(path.resolve(loader.baseDir, c.path), 'utf-8')
-          .then((source) => transpileAndRegisterForModule(
-            loader,
-            m,
-            c,
-            source,
-            language,
-          ))
-          .then(resolve, reject);
-        return;
+  Promise.all(
+    compatible.map((m) => {
+      if (m.icon) {
+        loader.setLibraryIcon(m.name, m.icon);
       }
-      registerSpecs(loader, m.name, c.name, c.tests);
-      loader.registerComponent(m.name, c.name, path.resolve(loader.baseDir, c.path), (err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve();
-      });
-    })));
-  }))
-    .then(
-      () => {
-        registerCustomLoaders(loader, componentLoaders, callback);
-      },
-      callback,
-    );
+
+      if (m.noflo?.loader) {
+        const loaderPath = path.resolve(loader.baseDir, m.base, m.noflo.loader);
+        componentLoaders.push(loaderPath);
+      }
+
+      return Promise.all(
+        m.components.map(
+          (c) =>
+            new Promise((resolve, reject) => {
+              const language = utils.guessLanguageFromFilename(c.path);
+              if (language === "typescript" || language === "coffeescript") {
+                // We can't require a module that requires transpilation, go the setSource route
+                readFile(path.resolve(loader.baseDir, c.path), "utf-8")
+                  .then((source) =>
+                    transpileAndRegisterForModule(
+                      loader,
+                      m,
+                      c,
+                      source,
+                      language,
+                    ),
+                  )
+                  .then(resolve, reject);
+                return;
+              }
+              registerSpecs(loader, m.name, c.name, c.tests);
+              loader.registerComponent(
+                m.name,
+                c.name,
+                path.resolve(loader.baseDir, c.path),
+                (err) => {
+                  if (err) {
+                    reject(err);
+                    return;
+                  }
+                  resolve();
+                },
+              );
+            }),
+        ),
+      );
+    }),
+  ).then(() => {
+    registerCustomLoaders(loader, componentLoaders, callback);
+  }, callback);
 }
 
 const dynamicLoader = {
@@ -456,21 +520,28 @@ const dynamicLoader = {
   listComponents(loader, manifestOptions, callback) {
     const opts = manifestOptions;
     opts.discover = true;
-    manifest.list.list(loader.baseDir, opts)
-      .then((modules) => new Promise((resolve, reject) => {
-        registerModules(loader, modules, (err) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve(modules);
-        });
-      }))
-      .then((modules) => {
-        callback(null, modules);
-      }, (err) => {
-        callback(err);
-      });
+    manifest.list
+      .list(loader.baseDir, opts)
+      .then(
+        (modules) =>
+          new Promise((resolve, reject) => {
+            registerModules(loader, modules, (err) => {
+              if (err) {
+                reject(err);
+                return;
+              }
+              resolve(modules);
+            });
+          }),
+      )
+      .then(
+        (modules) => {
+          callback(null, modules);
+        },
+        (err) => {
+          callback(err);
+        },
+      );
   },
 };
 
@@ -483,13 +554,12 @@ const manifestLoader = {
    * @returns {Promise<import("fbp-manifest/dist/lib/list").FbpManifestDocument>}
    */
   writeCache(loader, options, manifestContents) {
-    const manifestName = options.manifest || 'fbp.json';
+    const manifestName = options.manifest || "fbp.json";
     const filePath = path.resolve(loader.baseDir, manifestName);
 
     return writeFile(filePath, JSON.stringify(manifestContents, null, 2), {
-      encoding: 'utf-8',
-    })
-      .then(() => manifestContents);
+      encoding: "utf-8",
+    }).then(() => manifestContents);
   },
 
   /**
@@ -510,14 +580,17 @@ const manifestLoader = {
    */
   prepareManifestOptions(loader) {
     const l = loader;
-    if (!l.options) { l.options = {}; }
+    if (!l.options) {
+      l.options = {};
+    }
     const options = {};
     options.runtimes = l.options.runtimes || [];
-    if (options.runtimes.indexOf('noflo') === -1) {
-      options.runtimes.push('noflo');
+    if (options.runtimes.indexOf("noflo") === -1) {
+      options.runtimes.push("noflo");
     }
-    options.recursive = typeof l.options.recursive === 'undefined' ? true : l.options.recursive;
-    options.manifest = l.options.manifest || 'fbp.json';
+    options.recursive =
+      typeof l.options.recursive === "undefined" ? true : l.options.recursive;
+    options.manifest = l.options.manifest || "fbp.json";
     return options;
   },
 
@@ -533,23 +606,28 @@ const manifestLoader = {
           return Promise.reject(err);
         }
         return new Promise((resolve, reject) => {
-          dynamicLoader.listComponents(loader, manifestOptions, (err2, modules) => {
-            if (err2) {
-              reject(err2);
-              return;
-            }
-            resolve(modules);
-          });
-        })
-          .then((modules) => {
-            const manifestContents = {
-              version: 1,
-              modules,
-            };
-            return this
-              .writeCache(loader, manifestOptions, manifestContents)
-              .then(() => manifestContents);
-          });
+          dynamicLoader.listComponents(
+            loader,
+            manifestOptions,
+            (err2, modules) => {
+              if (err2) {
+                reject(err2);
+                return;
+              }
+              resolve(modules);
+            },
+          );
+        }).then((modules) => {
+          const manifestContents = {
+            version: 1,
+            modules,
+          };
+          return this.writeCache(
+            loader,
+            manifestOptions,
+            manifestContents,
+          ).then(() => manifestContents);
+        });
       })
       .then((manifestContents) => {
         registerModules(loader, manifestContents.modules, (err) => {
@@ -571,8 +649,11 @@ const manifestLoader = {
  */
 function registerSubgraph(loader) {
   // Inject subgraph component
-  const graphPath = path.resolve(import.meta.dirname, '../../components/Graph.js');
-  loader.registerComponent(null, 'Graph', graphPath);
+  const graphPath = path.resolve(
+    import.meta.dirname,
+    "../../components/Graph.js",
+  );
+  loader.registerComponent(null, "Graph", graphPath);
 }
 
 /**
@@ -627,23 +708,26 @@ export function dynamicLoad(name, cPath, metadata, callback) {
   import(cacheBusted)
     .then((implementation) => {
       let instance;
-      if (typeof implementation.getComponent === 'function') {
+      if (typeof implementation.getComponent === "function") {
         instance = implementation.getComponent(metadata);
-      } else if (typeof implementation === 'function') {
+      } else if (typeof implementation === "function") {
         instance = implementation(metadata);
-      } else if (implementation.default && typeof implementation.default.getComponent === 'function') {
+      } else if (
+        implementation.default &&
+        typeof implementation.default.getComponent === "function"
+      ) {
         instance = implementation.default.getComponent(metadata);
-      } else if (typeof implementation.default === 'function') {
+      } else if (typeof implementation.default === "function") {
         instance = implementation.default(metadata);
       } else {
         throw new Error(`Unable to instantiate ${cPath}`);
       }
-      if (typeof name === 'string') {
+      if (typeof name === "string") {
         instance.componentName = name;
       }
       callback(null, instance);
     })
     .catch((e) => {
-      callback(e)
+      callback(e);
     });
 }

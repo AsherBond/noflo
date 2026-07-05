@@ -1,74 +1,66 @@
-import assert from 'node:assert/strict';
-import { describe, it, before, afterEach } from 'node:test';
-import * as noflo from '../src/lib/NoFlo.js';
-import flowtrace from 'flowtrace';
+import assert from "node:assert/strict";
+import { afterEach, before, describe, it } from "node:test";
+import flowtrace from "flowtrace";
+import * as noflo from "../src/lib/NoFlo.js";
 
-describe('asPromise interface', () => {
+describe("asPromise interface", () => {
   let loader = null;
 
   const processAsync = () => {
     const c = new noflo.Component();
-    c.inPorts.add('in',
-      { datatype: 'string' });
-    c.outPorts.add('out',
-      { datatype: 'string' });
+    c.inPorts.add("in", { datatype: "string" });
+    c.outPorts.add("out", { datatype: "string" });
 
     return c.process((input, output) => {
-      const data = input.getData('in');
-      setTimeout(() => output.sendDone(data),
-        1);
+      const data = input.getData("in");
+      setTimeout(() => output.sendDone(data), 1);
     });
   };
   const processError = () => {
     const c = new noflo.Component();
-    c.inPorts.add('in',
-      { datatype: 'string' });
-    c.outPorts.add('out',
-      { datatype: 'string' });
-    c.outPorts.add('error');
+    c.inPorts.add("in", { datatype: "string" });
+    c.outPorts.add("out", { datatype: "string" });
+    c.outPorts.add("error");
     return c.process((input, output) => {
-      const data = input.getData('in');
+      const data = input.getData("in");
       output.done(new Error(`Received ${data}`));
     });
   };
   const processValues = () => {
     const c = new noflo.Component();
-    c.inPorts.add('in', {
-      datatype: 'string',
-      values: ['green', 'blue'],
+    c.inPorts.add("in", {
+      datatype: "string",
+      values: ["green", "blue"],
     });
-    c.outPorts.add('out',
-      { datatype: 'string' });
+    c.outPorts.add("out", { datatype: "string" });
     return c.process((input, output) => {
-      const data = input.getData('in');
+      const data = input.getData("in");
       output.sendDone(data);
     });
   };
   const neverSend = () => {
     const c = new noflo.Component();
-    c.inPorts.add('in',
-      { datatype: 'string' });
-    c.outPorts.add('out',
-      { datatype: 'string' });
+    c.inPorts.add("in", { datatype: "string" });
+    c.outPorts.add("out", { datatype: "string" });
     return c.process((input) => {
-      input.getData('in');
+      input.getData("in");
     });
   };
   const streamify = () => {
     const c = new noflo.Component();
-    c.inPorts.add('in',
-      { datatype: 'string' });
-    c.outPorts.add('out',
-      { datatype: 'string' });
+    c.inPorts.add("in", { datatype: "string" });
+    c.outPorts.add("out", { datatype: "string" });
     c.process((input, output) => {
-      const data = input.getData('in');
-      const words = data.split(' ');
+      const data = input.getData("in");
+      const words = data.split(" ");
       for (let idx = 0; idx < words.length; idx++) {
         const word = words[idx];
-        output.send(new noflo.IP('openBracket', idx));
-        const chars = word.split('');
-        for (const char of chars) { output.send(new noflo.IP('data', char)); }
-        output.send(new noflo.IP('closeBracket', idx));
+        output.send(new noflo.IP("openBracket", idx));
+        const chars = word.split("");
+        for (const char of chars) {
+          output.send(new noflo.IP("data", char));
+        }
+        output.send(new noflo.IP("closeBracket", idx));
       }
       output.done();
     });
@@ -77,370 +69,397 @@ describe('asPromise interface', () => {
 
   before(() => {
     loader = new noflo.ComponentLoader(process.cwd());
-    return loader
-      .listComponents()
-      .then(() => {
-        loader.registerComponent('process', 'Async', processAsync);
-        loader.registerComponent('process', 'Error', processError);
-        loader.registerComponent('process', 'Values', processValues);
-        loader.registerComponent('process', 'NeverSend', neverSend);
-        loader.registerComponent('process', 'Streamify', streamify);
-      });
+    return loader.listComponents().then(() => {
+      loader.registerComponent("process", "Async", processAsync);
+      loader.registerComponent("process", "Error", processError);
+      loader.registerComponent("process", "Values", processValues);
+      loader.registerComponent("process", "NeverSend", neverSend);
+      loader.registerComponent("process", "Streamify", streamify);
+    });
   });
-  describe('with a non-existing component', () => {
+  describe("with a non-existing component", () => {
     let wrapped = null;
     before(() => {
-      wrapped = noflo.asPromise('foo/Bar',
-        { loader });
+      wrapped = noflo.asPromise("foo/Bar", { loader });
     });
-    it('should be able to wrap it', (_t, done) => {
+    it("should be able to wrap it", (_t, done) => {
       assert.strictEqual(typeof wrapped, "function");
       assert.strictEqual(wrapped.length, 1);
       done();
     });
-    it('should fail execution', () => wrapped(1)
-      .then(() => {
-        throw new Error('Unexpected pass');
-      }, (err) => {
-        assert.strictEqual(Error.isError(err), true);
-      }));
+    it("should fail execution", () =>
+      wrapped(1).then(
+        () => {
+          throw new Error("Unexpected pass");
+        },
+        (err) => {
+          assert.strictEqual(Error.isError(err), true);
+        },
+      ));
   });
-  describe('with simple asynchronous component', () => {
+  describe("with simple asynchronous component", () => {
     let wrapped = null;
     before(() => {
-      wrapped = noflo.asPromise('process/Async',
-        { loader });
+      wrapped = noflo.asPromise("process/Async", { loader });
     });
-    it('should be able to wrap it', (_t, done) => {
+    it("should be able to wrap it", (_t, done) => {
       assert.strictEqual(typeof wrapped, "function");
       assert.strictEqual(wrapped.length, 1);
       done();
     });
-    it('should execute network with input map and provide output map', () => {
-      const expected = { hello: 'world' };
+    it("should execute network with input map and provide output map", () => {
+      const expected = { hello: "world" };
 
       return wrapped({
         in: expected,
-      })
-        .then((out) => {
-          assert.deepStrictEqual(out.out, expected);
-        });
+      }).then((out) => {
+        assert.deepStrictEqual(out.out, expected);
+      });
     });
-    it('should execute network with simple input and provide simple output', () => {
-      const expected = { hello: 'world' };
+    it("should execute network with simple input and provide simple output", () => {
+      const expected = { hello: "world" };
 
-      return wrapped(expected)
-        .then((out) => {
-          assert.deepStrictEqual(out, expected);
-        });
+      return wrapped(expected).then((out) => {
+        assert.deepStrictEqual(out, expected);
+      });
     });
-    it('should not mix up simultaneous runs', (_t, done) => {
+    it("should not mix up simultaneous runs", (_t, done) => {
       let received = 0;
       for (let idx = 0; idx <= 100; idx += 1) {
         /* eslint-disable no-loop-func */
-        wrapped(idx)
-          .then((out) => {
-            assert.strictEqual(out, idx);
-            received++;
-            if (received !== 101) { return; }
-            done();
-          }, done);
+        wrapped(idx).then((out) => {
+          assert.strictEqual(out, idx);
+          received++;
+          if (received !== 101) {
+            return;
+          }
+          done();
+        }, done);
       }
     });
-    it('should execute a network with a sequence and provide output sequence', () => {
+    it("should execute a network with a sequence and provide output sequence", () => {
       const sent = [
-        { in: 'hello' },
-        { in: 'world' },
-        { in: 'foo' },
-        { in: 'bar' },
+        { in: "hello" },
+        { in: "world" },
+        { in: "foo" },
+        { in: "bar" },
       ];
       const expected = sent.map((portmap) => ({ out: portmap.in }));
-      return wrapped(sent)
-        .then((out) => {
-          assert.deepStrictEqual(out, expected);
-        });
+      return wrapped(sent).then((out) => {
+        assert.deepStrictEqual(out, expected);
+      });
     });
-    describe('with the raw option', () => {
-      it('should execute a network with a sequence and provide output sequence', () => {
-        const wrappedRaw = noflo.asPromise('process/Async', {
+    describe("with the raw option", () => {
+      it("should execute a network with a sequence and provide output sequence", () => {
+        const wrappedRaw = noflo.asPromise("process/Async", {
           loader,
           raw: true,
         });
         const sent = [
-          { in: new noflo.IP('openBracket', 'a') },
-          { in: 'hello' },
-          { in: 'world' },
-          { in: new noflo.IP('closeBracket', 'a') },
-          { in: new noflo.IP('openBracket', 'b') },
-          { in: 'foo' },
-          { in: 'bar' },
-          { in: new noflo.IP('closeBracket', 'b') },
+          { in: new noflo.IP("openBracket", "a") },
+          { in: "hello" },
+          { in: "world" },
+          { in: new noflo.IP("closeBracket", "a") },
+          { in: new noflo.IP("openBracket", "b") },
+          { in: "foo" },
+          { in: "bar" },
+          { in: new noflo.IP("closeBracket", "b") },
         ];
-        return wrappedRaw(sent)
-          .then((out) => {
-            const types = out.map((map) => `${map.out.type} ${map.out.data}`);
-            assert.deepStrictEqual(types, [
-              'openBracket a',
-              'data hello',
-              'data world',
-              'closeBracket a',
-              'openBracket b',
-              'data foo',
-              'data bar',
-              'closeBracket b',
-            ]);
-          });
+        return wrappedRaw(sent).then((out) => {
+          const types = out.map((map) => `${map.out.type} ${map.out.data}`);
+          assert.deepStrictEqual(types, [
+            "openBracket a",
+            "data hello",
+            "data world",
+            "closeBracket a",
+            "openBracket b",
+            "data foo",
+            "data bar",
+            "closeBracket b",
+          ]);
+        });
       });
     });
   });
-  describe('with a component sending an error', () => {
+  describe("with a component sending an error", () => {
     let wrapped = null;
     before(() => {
-      wrapped = noflo.asPromise('process/Error',
-        { loader });
+      wrapped = noflo.asPromise("process/Error", { loader });
     });
-    it('should execute network with input map and provide error', () => {
-      const expected = 'hello there';
+    it("should execute network with input map and provide error", () => {
+      const expected = "hello there";
       return wrapped({
         in: expected,
-      })
-        .then(() => {
-          throw new Error('Received unexpected output');
-        }, (err) => {
+      }).then(
+        () => {
+          throw new Error("Received unexpected output");
+        },
+        (err) => {
           assert.strictEqual(Error.isError(err), true);
           assert.ok(err.message.includes(expected));
-        });
+        },
+      );
     });
-    it('should execute network with simple input and provide error', () => {
-      const expected = 'hello world';
-      return wrapped(expected)
-        .then(() => {
-          throw new Error('Received unexpected output');
-        }, (err) => {
+    it("should execute network with simple input and provide error", () => {
+      const expected = "hello world";
+      return wrapped(expected).then(
+        () => {
+          throw new Error("Received unexpected output");
+        },
+        (err) => {
           assert.strictEqual(Error.isError(err), true);
           assert.ok(err.message.includes(expected));
-        });
+        },
+      );
     });
   });
-  describe('with a component supporting only certain values', () => {
+  describe("with a component supporting only certain values", () => {
     let wrapped = null;
     before(() => {
-      wrapped = noflo.asPromise('process/Values',
-        { loader });
+      wrapped = noflo.asPromise("process/Values", { loader });
     });
-    it('should execute network with input map and provide output map', () => {
-      const expected = 'blue';
+    it("should execute network with input map and provide output map", () => {
+      const expected = "blue";
       return wrapped({
         in: expected,
-      })
-        .then((out) => {
-          assert.deepStrictEqual(out.out, expected);
-        });
+      }).then((out) => {
+        assert.deepStrictEqual(out.out, expected);
+      });
     });
-    it('should execute network with simple input and provide simple output', () => {
-      const expected = 'blue';
-      return wrapped(expected)
-        .then((out) => {
-          assert.deepStrictEqual(out, expected);
-        });
+    it("should execute network with simple input and provide simple output", () => {
+      const expected = "blue";
+      return wrapped(expected).then((out) => {
+        assert.deepStrictEqual(out, expected);
+      });
     });
-    it('should execute network with wrong map and provide error', () => wrapped({
-      in: 'red',
-    })
-      .then(() => {
-        throw new Error('Received unexpected output');
-      }, (err) => {
-        assert.strictEqual(Error.isError(err), true);
-        assert.ok(err.message.includes('Invalid data=\'red\' received, not in [green,blue]'));
-      }));
-    it('should execute network with wrong input and provide error', () => wrapped('red')
-      .then(() => {
-        throw new Error('Received unexpected output');
-      }, (err) => {
-        assert.strictEqual(Error.isError(err), true);
-        assert.ok(err.message.includes('Invalid data=\'red\' received, not in [green,blue]'));
-      }));
+    it("should execute network with wrong map and provide error", () =>
+      wrapped({
+        in: "red",
+      }).then(
+        () => {
+          throw new Error("Received unexpected output");
+        },
+        (err) => {
+          assert.strictEqual(Error.isError(err), true);
+          assert.ok(
+            err.message.includes(
+              "Invalid data='red' received, not in [green,blue]",
+            ),
+          );
+        },
+      ));
+    it("should execute network with wrong input and provide error", () =>
+      wrapped("red").then(
+        () => {
+          throw new Error("Received unexpected output");
+        },
+        (err) => {
+          assert.strictEqual(Error.isError(err), true);
+          assert.ok(
+            err.message.includes(
+              "Invalid data='red' received, not in [green,blue]",
+            ),
+          );
+        },
+      ));
   });
-  describe('with a component sending streams', () => {
+  describe("with a component sending streams", () => {
     let wrapped = null;
     before(() => {
-      wrapped = noflo.asPromise('process/Streamify',
-        { loader });
+      wrapped = noflo.asPromise("process/Streamify", { loader });
     });
-    it('should execute network with input map and provide output map with streams as arrays', () => wrapped({
-      in: 'hello world',
-    })
-      .then((out) => {
+    it("should execute network with input map and provide output map with streams as arrays", () =>
+      wrapped({
+        in: "hello world",
+      }).then((out) => {
         assert.deepStrictEqual(out.out, [
-          ['h', 'e', 'l', 'l', 'o'],
-          ['w', 'o', 'r', 'l', 'd'],
+          ["h", "e", "l", "l", "o"],
+          ["w", "o", "r", "l", "d"],
         ]);
       }));
-    it('should execute network with simple input and and provide simple output with streams as arrays', () => wrapped('hello there')
-      .then((out) => {
+    it("should execute network with simple input and and provide simple output with streams as arrays", () =>
+      wrapped("hello there").then((out) => {
         assert.deepStrictEqual(out, [
-          ['h', 'e', 'l', 'l', 'o'],
-          ['t', 'h', 'e', 'r', 'e'],
+          ["h", "e", "l", "l", "o"],
+          ["t", "h", "e", "r", "e"],
         ]);
       }));
-    describe('with the raw option', () => {
-      it('should execute network with input map and provide output map with IP objects', () => {
-        const wrappedRaw = noflo.asPromise('process/Streamify', {
+    describe("with the raw option", () => {
+      it("should execute network with input map and provide output map with IP objects", () => {
+        const wrappedRaw = noflo.asPromise("process/Streamify", {
           loader,
           raw: true,
         });
         return wrappedRaw({
-          in: 'hello world',
-        })
-          .then((out) => {
-            const types = out.out.map((ip) => `${ip.type} ${ip.data}`);
-            assert.deepStrictEqual(types, [
-              'openBracket 0',
-              'data h',
-              'data e',
-              'data l',
-              'data l',
-              'data o',
-              'closeBracket 0',
-              'openBracket 1',
-              'data w',
-              'data o',
-              'data r',
-              'data l',
-              'data d',
-              'closeBracket 1',
-            ]);
-          });
-      });
-    });
-  });
-  describe('with a graph instead of component name', () => {
-    let graph = null;
-    let wrapped = null;
-    before((_t, done) => {
-      noflo.graph.loadFBP(`\
-INPORT=Async.IN:IN
-OUTPORT=Stream.OUT:OUT
-Async(process/Async) OUT -> IN Stream(process/Streamify)\
-`, (err, g) => {
-        if (err) {
-          done(err);
-          return;
-        }
-        graph = g;
-        wrapped = noflo.asPromise(graph, {
-          loader,
-          asyncDelivery: true,
+          in: "hello world",
+        }).then((out) => {
+          const types = out.out.map((ip) => `${ip.type} ${ip.data}`);
+          assert.deepStrictEqual(types, [
+            "openBracket 0",
+            "data h",
+            "data e",
+            "data l",
+            "data l",
+            "data o",
+            "closeBracket 0",
+            "openBracket 1",
+            "data w",
+            "data o",
+            "data r",
+            "data l",
+            "data d",
+            "closeBracket 1",
+          ]);
         });
-        done();
       });
     });
-    it('should execute network with input map and provide output map with streams as arrays', () => wrapped({
-      in: 'hello world',
-    })
-      .then((out) => {
-        assert.deepStrictEqual(out.out, [
-          ['h', 'e', 'l', 'l', 'o'],
-          ['w', 'o', 'r', 'l', 'd'],
-        ]);
-      }));
-    it('should execute network with simple input and and provide simple output with streams as arrays', () => wrapped('hello there')
-      .then((out) => {
-        assert.deepStrictEqual(out, [
-          ['h', 'e', 'l', 'l', 'o'],
-          ['t', 'h', 'e', 'r', 'e'],
-        ]);
-      }));
   });
-  describe('with a graph instead of component name (synchronous)', () => {
+  describe("with a graph instead of component name", () => {
     let graph = null;
     let wrapped = null;
     before((_t, done) => {
-      noflo.graph.loadFBP(`\
+      noflo.graph.loadFBP(
+        `\
 INPORT=Async.IN:IN
 OUTPORT=Stream.OUT:OUT
 Async(process/Async) OUT -> IN Stream(process/Streamify)\
-`, (err, g) => {
-        if (err) {
-          done(err);
-          return;
-        }
-        graph = g;
-        wrapped = noflo.asPromise(graph,
-          { loader });
-        done();
-      });
+`,
+        (err, g) => {
+          if (err) {
+            done(err);
+            return;
+          }
+          graph = g;
+          wrapped = noflo.asPromise(graph, {
+            loader,
+            asyncDelivery: true,
+          });
+          done();
+        },
+      );
     });
-    it('should execute network with input map and provide output map with streams as arrays', () => wrapped({
-      in: 'hello world',
-    })
-      .then((out) => {
+    it("should execute network with input map and provide output map with streams as arrays", () =>
+      wrapped({
+        in: "hello world",
+      }).then((out) => {
         assert.deepStrictEqual(out.out, [
-          ['h', 'e', 'l', 'l', 'o'],
-          ['w', 'o', 'r', 'l', 'd'],
+          ["h", "e", "l", "l", "o"],
+          ["w", "o", "r", "l", "d"],
         ]);
       }));
-    it('should execute network with simple input and and provide simple output with streams as arrays', () => wrapped('hello there')
-      .then((out) => {
+    it("should execute network with simple input and and provide simple output with streams as arrays", () =>
+      wrapped("hello there").then((out) => {
         assert.deepStrictEqual(out, [
-          ['h', 'e', 'l', 'l', 'o'],
-          ['t', 'h', 'e', 'r', 'e'],
+          ["h", "e", "l", "l", "o"],
+          ["t", "h", "e", "r", "e"],
         ]);
       }));
   });
-  describe('with a graph containing a component supporting only certain values', () => {
+  describe("with a graph instead of component name (synchronous)", () => {
     let graph = null;
     let wrapped = null;
     before((_t, done) => {
-      noflo.graph.loadFBP(`\
+      noflo.graph.loadFBP(
+        `\
+INPORT=Async.IN:IN
+OUTPORT=Stream.OUT:OUT
+Async(process/Async) OUT -> IN Stream(process/Streamify)\
+`,
+        (err, g) => {
+          if (err) {
+            done(err);
+            return;
+          }
+          graph = g;
+          wrapped = noflo.asPromise(graph, { loader });
+          done();
+        },
+      );
+    });
+    it("should execute network with input map and provide output map with streams as arrays", () =>
+      wrapped({
+        in: "hello world",
+      }).then((out) => {
+        assert.deepStrictEqual(out.out, [
+          ["h", "e", "l", "l", "o"],
+          ["w", "o", "r", "l", "d"],
+        ]);
+      }));
+    it("should execute network with simple input and and provide simple output with streams as arrays", () =>
+      wrapped("hello there").then((out) => {
+        assert.deepStrictEqual(out, [
+          ["h", "e", "l", "l", "o"],
+          ["t", "h", "e", "r", "e"],
+        ]);
+      }));
+  });
+  describe("with a graph containing a component supporting only certain values", () => {
+    let graph = null;
+    let wrapped = null;
+    before((_t, done) => {
+      noflo.graph.loadFBP(
+        `\
 INPORT=Async.IN:IN
 OUTPORT=Values.OUT:OUT
 Async(process/Async) OUT -> IN Values(process/Values)\
-`, (err, g) => {
-        if (err) {
-          done(err);
-          return;
-        }
-        graph = g;
-        wrapped = noflo.asPromise(graph,
-          { loader });
-        done();
-      });
+`,
+        (err, g) => {
+          if (err) {
+            done(err);
+            return;
+          }
+          graph = g;
+          wrapped = noflo.asPromise(graph, { loader });
+          done();
+        },
+      );
     });
-    it('should execute network with input map and provide output map', () => {
-      const expected = 'blue';
+    it("should execute network with input map and provide output map", () => {
+      const expected = "blue";
       return wrapped({
         in: expected,
-      })
-        .then((out) => {
-          assert.deepStrictEqual(out.out, expected);
-        });
+      }).then((out) => {
+        assert.deepStrictEqual(out.out, expected);
+      });
     });
-    it('should execute network with simple input and provide simple output', () => {
-      const expected = 'blue';
-      return wrapped(expected)
-        .then((out) => {
-          assert.deepStrictEqual(out, expected);
-        });
+    it("should execute network with simple input and provide simple output", () => {
+      const expected = "blue";
+      return wrapped(expected).then((out) => {
+        assert.deepStrictEqual(out, expected);
+      });
     });
-    it('should execute network with wrong map and provide error', () => wrapped({
-      in: 'red',
-    })
-      .then(() => {
-        throw new Error('Unexpected pass');
-      }, (err) => {
-        assert.strictEqual(Error.isError(err), true);
-        assert.ok(err.message.includes('Invalid data=\'red\' received, not in [green,blue]'));
-      }));
-    it('should execute network with wrong input and provide error', () => wrapped('red')
-      .then(() => {
-        throw new Error('Unexpected pass');
-      }, (err) => {
-        assert.strictEqual(Error.isError(err), true);
-        assert.ok(err.message.includes('Invalid data=\'red\' received, not in [green,blue]'));
-      }));
+    it("should execute network with wrong map and provide error", () =>
+      wrapped({
+        in: "red",
+      }).then(
+        () => {
+          throw new Error("Unexpected pass");
+        },
+        (err) => {
+          assert.strictEqual(Error.isError(err), true);
+          assert.ok(
+            err.message.includes(
+              "Invalid data='red' received, not in [green,blue]",
+            ),
+          );
+        },
+      ));
+    it("should execute network with wrong input and provide error", () =>
+      wrapped("red").then(
+        () => {
+          throw new Error("Unexpected pass");
+        },
+        (err) => {
+          assert.strictEqual(Error.isError(err), true);
+          assert.ok(
+            err.message.includes(
+              "Invalid data='red' received, not in [green,blue]",
+            ),
+          );
+        },
+      ));
   });
-  describe('with networkCallback option', () => {
+  describe("with networkCallback option", () => {
     let wrapped = null;
     let called = 0;
     let started = 0;
@@ -448,12 +467,12 @@ Async(process/Async) OUT -> IN Values(process/Values)\
       called = 0;
       started = 0;
     });
-    it('should not provide network at callbackization time', (_t, done) => {
+    it("should not provide network at callbackization time", (_t, done) => {
       assert.strictEqual(called, 0);
-      wrapped = noflo.asPromise('process/Async', {
+      wrapped = noflo.asPromise("process/Async", {
         loader,
         networkCallback: (network) => {
-          network.on('start', () => {
+          network.on("start", () => {
             started++;
           });
           called++;
@@ -463,67 +482,78 @@ Async(process/Async) OUT -> IN Values(process/Values)\
       assert.strictEqual(called, 0);
       done();
     });
-    it('should provide the network to the callback when executed', () => {
-      const expected = { hello: 'world' };
+    it("should provide the network to the callback when executed", () => {
+      const expected = { hello: "world" };
       assert.strictEqual(called, 0);
 
-      return wrapped(expected)
-        .then((out) => {
-          assert.deepStrictEqual(out, expected);
-          assert.strictEqual(called, 1);
-        });
+      return wrapped(expected).then((out) => {
+        assert.deepStrictEqual(out, expected);
+        assert.strictEqual(called, 1);
+      });
     });
-    it('should provide the network before actual execution so that we catch the start event', () => {
-      const expected = { hello: 'world' };
+    it("should provide the network before actual execution so that we catch the start event", () => {
+      const expected = { hello: "world" };
       assert.strictEqual(called, 0);
       assert.strictEqual(started, 0);
 
-      return wrapped(expected)
-        .then((out) => {
-          assert.deepStrictEqual(out, expected);
-          assert.strictEqual(called, 1);
-          assert.strictEqual(started, 1);
-        });
+      return wrapped(expected).then((out) => {
+        assert.deepStrictEqual(out, expected);
+        assert.strictEqual(called, 1);
+        assert.strictEqual(started, 1);
+      });
     });
   });
-  describe('with flowtrace option', () => {
-    it('should store a trace for a simple component execution', () => {
+  describe("with flowtrace option", () => {
+    it("should store a trace for a simple component execution", () => {
       const trace = new flowtrace.Flowtrace();
-      const wrapped = noflo.asPromise('process/Async', {
+      const wrapped = noflo.asPromise("process/Async", {
         loader,
         flowtrace: trace,
       });
-      return wrapped('hello')
-        .then((out) => {
-          assert.strictEqual(out, 'hello');
-          const collectedTrace = trace.toJSON();
-          assert.deepStrictEqual(Object.keys(collectedTrace.header.metadata), ['start', 'end']);
-          assert.strictEqual(typeof collectedTrace.header.graphs['process/Async'], "object");
-          assert.strictEqual(collectedTrace.header.main, 'process/Async');
-          const eventTypes = collectedTrace.events.map((e) => `${e.protocol}:${e.command}`);
-          assert.deepStrictEqual(eventTypes, [
-            'network:started',
-            'network:data',
-            'network:data',
-            'network:stopped',
-          ]);
-          assert.deepEqual(JSON.parse(JSON.stringify(collectedTrace.events[1].payload)), {
-            data: 'hello',
+      return wrapped("hello").then((out) => {
+        assert.strictEqual(out, "hello");
+        const collectedTrace = trace.toJSON();
+        assert.deepStrictEqual(Object.keys(collectedTrace.header.metadata), [
+          "start",
+          "end",
+        ]);
+        assert.strictEqual(
+          typeof collectedTrace.header.graphs["process/Async"],
+          "object",
+        );
+        assert.strictEqual(collectedTrace.header.main, "process/Async");
+        const eventTypes = collectedTrace.events.map(
+          (e) => `${e.protocol}:${e.command}`,
+        );
+        assert.deepStrictEqual(eventTypes, [
+          "network:started",
+          "network:data",
+          "network:data",
+          "network:stopped",
+        ]);
+        assert.deepEqual(
+          JSON.parse(JSON.stringify(collectedTrace.events[1].payload)),
+          {
+            data: "hello",
             src: null,
             tgt: {
-              node: 'process/Async',
-              port: 'in',
+              node: "process/Async",
+              port: "in",
             },
-          });
-          assert.deepEqual(JSON.parse(JSON.stringify(collectedTrace.events[2].payload)), {
-            data: 'hello',
+          },
+        );
+        assert.deepEqual(
+          JSON.parse(JSON.stringify(collectedTrace.events[2].payload)),
+          {
+            data: "hello",
             src: {
-              node: 'process/Async',
-              port: 'out',
+              node: "process/Async",
+              port: "out",
             },
             tgt: null,
-          });
-        });
+          },
+        );
+      });
     });
   });
 });

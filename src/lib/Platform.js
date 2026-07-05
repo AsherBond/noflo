@@ -13,7 +13,11 @@
  * @returns {boolean}
  */
 export function isBrowser() {
-  if ((typeof process !== 'undefined') && process.execPath && process.execPath.match(/node|iojs/)) {
+  if (
+    typeof process !== "undefined" &&
+    process.execPath &&
+    process.execPath.match(/node|iojs/)
+  ) {
     return false;
   }
   return true;
