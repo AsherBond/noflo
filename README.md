@@ -93,6 +93,10 @@ or:
 $ npm run test:browser
 ```
 
-## Discussion
+## Support NoFlo
 
-There is a `#noflo` channel on the [Flow-Based Programming Slack](https://join.slack.com/t/fbphq/shared_invite/enQtOTM4ODkzMTYyODE3LTJiMmNlZjhiMWY1MDY1ODA4Y2YzNDBlNDZlMTBkMDNlMjcwNzg2MGZhZjA2NjJjYTliYTM0OTIyYmM0Yzk0MDQ), and questions can be posted with the [`noflo` tag on Stack Overflow](http://stackoverflow.com/questions/tagged/noflo). See <http://noflojs.org/support/> for other ways to get in touch.
+We have had both corporate support and EU R&D funding over the years. Currently NoFlo UI is being developed as a passion project. To support development, here are some methods:
+
+* Ethereum: `0xFC872bA86812B2bbe90c38cfD2553F7865d04094`
+* Liberapay: https://liberapay.com/bergie/
+* ko-fi: https://ko-fi.com/bergius
